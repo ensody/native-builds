@@ -1,0 +1,4 @@
+include(watchos)
+[settings]
+arch=armv8_32
+os.sdk=watchos

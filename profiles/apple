@@ -1,0 +1,5 @@
+include(base)
+[settings]
+compiler=apple-clang
+compiler.version=15
+compiler.libcxx=libc++

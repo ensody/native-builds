@@ -1,0 +1,4 @@
+include(tvos)
+[settings]
+arch=armv8
+os.sdk=appletvsimulator

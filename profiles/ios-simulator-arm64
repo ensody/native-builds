@@ -1,0 +1,4 @@
+include(ios)
+[settings]
+arch=armv8
+os.sdk=iphonesimulator

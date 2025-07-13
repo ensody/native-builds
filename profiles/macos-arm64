@@ -1,0 +1,3 @@
+include(macos)
+[settings]
+arch=armv8

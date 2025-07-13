@@ -1,0 +1,4 @@
+include(tvos)
+[settings]
+arch=x86_64
+os.sdk=appletvsimulator

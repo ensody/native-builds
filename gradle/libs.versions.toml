@@ -1,0 +1,9 @@
+[versions]
+
+[libraries]
+serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.8.1" }
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.10.2" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version = "3.2.1" }
+
+[plugins]
+maven-publish = { id = "com.vanniktech.maven.publish", version = "0.33.0" }

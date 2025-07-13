@@ -1,0 +1,4 @@
+include(apple)
+[settings]
+os=Macos
+os.version=11.0
