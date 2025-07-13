@@ -1,5 +1,5 @@
+import com.ensody.buildlogic.OS
 import com.ensody.buildlogic.cli
-import com.ensody.buildlogic.shell
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.get
@@ -9,7 +9,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.net.URI
 
 plugins {
     id("com.ensody.build-logic.base")
@@ -52,12 +51,11 @@ if (!venvPath.exists()) {
     venvPath.parentFile.mkdirs()
     cli("python3", "-m", "venv", "$venvPath", inheritIO = true)
 }
-val venvBin = "$venvPath/" + if ("windows" in System.getProperty("os.name").lowercase()) "Scripts" else "bin"
+val venvBin = "$venvPath/" + if (OS.current == OS.Windows) "Scripts" else "bin"
 cli("$venvBin/pip", "install", "-U", "conan", inheritIO = true)
 runCatching { cli("$venvBin/conan", "profile", "detect") }
 
-//val publicationGroup = listOf("libcurl", "openssl", "zlib")
-val publicationGroup = listOf("zlib")
+val publicationGroup = listOf("libcurl", "libnghttp2", "openssl", "zlib")
 val pkg = publicationGroup.joinToString("-")
 
 val versionsRaw = cli("$venvBin/conan", "search", publicationGroup.first(), "-f", "json", "-v", "quiet")
@@ -72,7 +70,7 @@ val artifacts = Json.decodeFromString<JsonObject>(graphRaw)
     .getValue("nodes").jsonObject
     .values.mapNotNull { nodes ->
         nodes.jsonObject.run {
-            getValue("name").jsonPrimitive.contentOrNull?.let { name ->
+            getValue("name").jsonPrimitive.contentOrNull?.takeIf { println("$it: ${it in publicationGroup}"); it in publicationGroup }?.let { name ->
                 val version = getValue("version").jsonPrimitive.contentOrNull
                 version?.let {
                     Artifact(
@@ -86,9 +84,8 @@ val artifacts = Json.decodeFromString<JsonObject>(graphRaw)
         }
     }
 
-val osName = System.getProperty("os.name").lowercase()
-val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(",") ?: when {
-    "mac" in osName || "darwin" in osName -> listOf(
+val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(",") ?: when (OS.current) {
+    OS.macOS -> listOf(
         "ios-device-arm64",
         "ios-simulator-arm64",
         "ios-simulator-x64",
@@ -110,17 +107,15 @@ val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(
         "wasm",
     )
 
-    "linux" in osName -> listOf(
+    OS.Linux -> listOf(
         "linux-x64",
         "linux-arm64",
     )
 
-    "windows" in osName -> listOf(
+    OS.Windows -> listOf(
         "mingw-x64",
         "windows-x64",
     )
-
-    else -> error("Unknown operating system: $osName")
 }
 val conanPath = layout.buildDirectory.dir("conan").get().asFile
 val initBuildTask = tasks.register("cleanConan") {

@@ -4,7 +4,7 @@ from conan import ConanFile
 from conan.tools.files import copy
 
 
-class LibCurlOpenSslZlibConan(ConanFile):
+class CombinedConan(ConanFile):
     options = {
         "shared": [True, False],
     }
@@ -29,7 +29,7 @@ class LibCurlOpenSslZlibConan(ConanFile):
         self.options["libcurl"].with_librtmp = False
         self.options["libcurl"].with_libgsasl = False
         self.options["libcurl"].with_libpsl = False
-        # self.options["libcurl"].with_nghttp2 = True
+        self.options["libcurl"].with_nghttp2 = True
         self.options["libcurl"].with_zlib = True
         # self.options["libcurl"].with_brotli = True
         # self.options["libcurl"].with_zstd = True
@@ -106,7 +106,7 @@ class LibCurlOpenSslZlibConan(ConanFile):
         self.requires("libcurl/" + str(self.version))
 
     def generate(self):
-        for depname in ["openssl", "libcurl", "zlib"]:
+        for depname in ["openssl", "libcurl", "libnghttp2", "zlib"]:
             dep = self.dependencies[depname]
             includedir = dep.cpp_info.includedirs[0]
             libdir = dep.cpp_info.libdirs[0]
@@ -115,7 +115,7 @@ class LibCurlOpenSslZlibConan(ConanFile):
 
             copy(self, "*.h", includedir, join(base_output_path, "include"))
 
-            for libName in ["libcurl", "libcrypto", "libssl", "libz"]:
+            for libName in ["libcurl", "libnghttp2", "libcrypto", "libssl", "libz"]:
                 for ext in [
                     # mingw dynamic
                     "dll.a",

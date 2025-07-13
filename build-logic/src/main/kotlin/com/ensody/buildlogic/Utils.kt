@@ -9,7 +9,7 @@ fun cli(
     inheritIO: Boolean = false,
 ): String {
     var cmd = command.first().replace("/", File.separator)
-    if ("windows" in System.getProperty("os.name").lowercase()) {
+    if (OS.current == OS.Windows) {
         if (File("$cmd.bat").exists()) {
             cmd += ".bat"
         } else if (File("$cmd.exe").exists()) {
@@ -26,7 +26,7 @@ fun cli(
         if (inheritIO) {
             println(it)
         }
-        check(exitCode == 0) { "Process exit code was: $exitCode\nOriginal command: $command" }
+        check(exitCode == 0) { "Process exit code was: $exitCode\nOriginal command: ${command.toList()}\nResult:$it" }
     }
 }
 
@@ -37,3 +37,22 @@ fun shell(
     inheritIO: Boolean = false,
 ): String =
     cli("/bin/bash", "-c", command, workingDir = workingDir, env = env, inheritIO = inheritIO)
+
+enum class OS {
+    Linux,
+    macOS,
+    Windows,
+    ;
+
+    companion object Companion {
+        val current: OS by lazy {
+            val osName = System.getProperty("os.name").lowercase()
+            when {
+                "mac" in osName || "darwin" in osName -> macOS
+                "linux" in osName -> Linux
+                "windows" in osName -> Windows
+                else -> error("Unknown operating system: $osName")
+            }
+        }
+    }
+}
