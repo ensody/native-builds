@@ -4,6 +4,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/libcurl?label=libcurl&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/libcurl)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/libnghttp2?label=libnghttp2&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/libnghttp2)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib?label=zlib&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd?label=zstd&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd)
 
 This project regularly builds the latest available Conan version of
 
@@ -11,6 +12,7 @@ This project regularly builds the latest available Conan version of
 * libcurl
 * libnghttp2
 * zlib
+* zstd
 
 The artifacts are published to Maven Central, so they can be easily consumed by Gradle and Kotlin Multiplatform projects.
 

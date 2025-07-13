@@ -21,7 +21,8 @@ enum class License(val id: String, val longName: String, val url: String) {
         "The Apache Software License, Version 2.0",
         "https://www.apache.org/licenses/LICENSE-2.0.txt",
     ),
-    MIT("MIT", "The MIT License", "https://opensource.org/licenses/mit-license.php"),
+    BSD3("BSD-3-Clause", "BSD 3-Clause", "https://opensource.org/license/BSD-3-Clause"),
+    MIT("MIT", "The MIT License", "https://opensource.org/license/mit"),
     Curl("curl", "curl License", "https://spdx.org/licenses/curl.html"),
     ZLib("Zlib", "zlib License", "https://www.zlib.net/zlib_license.html"),
     ;
@@ -55,111 +56,117 @@ val venvBin = "$venvPath/" + if (OS.current == OS.Windows) "Scripts" else "bin"
 cli("$venvBin/pip", "install", "-U", "conan", inheritIO = true)
 runCatching { cli("$venvBin/conan", "profile", "detect") }
 
-val publicationGroup = listOf("libcurl", "libnghttp2", "openssl", "zlib")
-val pkg = publicationGroup.joinToString("-")
-
-val versionsRaw = cli("$venvBin/conan", "search", publicationGroup.first(), "-f", "json", "-v", "quiet")
-val pkgVersion = Json.decodeFromString<JsonObject>(versionsRaw).jsonObject
-    .getValue("conancenter").jsonObject
-    .keys.last()
-    .split("/").last()
-val graphRaw =
-    cli("$venvBin/conan", "graph", "info", "packages/$pkg", "--version=$pkgVersion", "-f", "json", "-v", "quiet")
-val artifacts = Json.decodeFromString<JsonObject>(graphRaw)
-    .getValue("graph").jsonObject
-    .getValue("nodes").jsonObject
-    .values.mapNotNull { nodes ->
-        nodes.jsonObject.run {
-            getValue("name").jsonPrimitive.contentOrNull?.takeIf { println("$it: ${it in publicationGroup}"); it in publicationGroup }?.let { name ->
-                val version = getValue("version").jsonPrimitive.contentOrNull
-                version?.let {
-                    Artifact(
-                        pkg = pkg,
-                        name = name,
-                        version = version,
-                        license = License.get(getValue("license").jsonPrimitive.content),
-                    )
-                }
-            }
-        }
-    }
-
-val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(",") ?: when (OS.current) {
-    OS.macOS -> listOf(
-        "ios-device-arm64",
-        "ios-simulator-arm64",
-        "ios-simulator-x64",
-        "tvos-device-arm64",
-        "tvos-simulator-arm64",
-        "tvos-simulator-x64",
-        "watchos-device-arm32",
-        "watchos-device-arm64",
-        "watchos-device-arm64_32",
-        "watchos-simulator-arm64",
-        "watchos-simulator-x64",
-        "macos-arm64",
-        "macos-x64",
-
-        "android-arm64",
-        "android-arm32",
-        "android-x64",
-        "android-x86",
-        "wasm",
-    )
-
-    OS.Linux -> listOf(
-        "linux-x64",
-        "linux-arm64",
-    )
-
-    OS.Windows -> listOf(
-        "mingw-x64",
-        "windows-x64",
-    )
-}
 val conanPath = layout.buildDirectory.dir("conan").get().asFile
 val initBuildTask = tasks.register("cleanConan") {
     doFirst {
         conanPath.deleteRecursively()
     }
 }
-for (artifact in artifacts) {
-    if (artifact.isPublished) continue
-    tasks.register("writeMetadata${artifact.name}") {
-        dependsOn(initBuildTask)
-        doLast {
-            val root = artifact.outputDir.get().asFile
-            root.mkdirs()
-            File(root, "version.txt").writeText(artifact.version)
-            File(root, "licenseId.txt").writeText(artifact.license.id)
-        }
-    }
-}
 val assembleTask = tasks.register("assembleAll")
-for (profile in targets) {
-    if (artifacts.all { it.isPublished }) continue
 
-    val pkgProfileName = listOf(pkg, profile).joinToString("-")
-    val taskName = "assemble$pkgProfileName"
-    val buildTask = tasks.register(taskName) {
-        dependsOn(initBuildTask)
-        doLast {
-            build(pkg, pkgVersion, profile)
+val publicationGroups = listOf(
+    listOf("libcurl", "libnghttp2", "openssl", "zlib"),
+    listOf("zstd"),
+)
+publicationGroups.forEach { publicationGroup ->
+    val pkg = publicationGroup.joinToString("-")
+
+    val versionsRaw = cli("$venvBin/conan", "search", publicationGroup.first(), "-f", "json", "-v", "quiet")
+    val pkgVersion = Json.decodeFromString<JsonObject>(versionsRaw).jsonObject
+        .getValue("conancenter").jsonObject
+        .keys.last()
+        .split("/").last()
+    val graphRaw =
+        cli("$venvBin/conan", "graph", "info", "packages/$pkg", "--version=$pkgVersion", "-f", "json", "-v", "quiet")
+    val artifacts = Json.decodeFromString<JsonObject>(graphRaw)
+        .getValue("graph").jsonObject
+        .getValue("nodes").jsonObject
+        .values.mapNotNull { nodes ->
+            nodes.jsonObject.run {
+                getValue("name").jsonPrimitive.contentOrNull?.takeIf { it in publicationGroup }?.let { name ->
+                    val version = getValue("version").jsonPrimitive.contentOrNull
+                    version?.let {
+                        Artifact(
+                            pkg = pkg,
+                            name = name,
+                            version = version,
+                            license = License.get(getValue("license").jsonPrimitive.content),
+                        )
+                    }
+                }
+            }
         }
-    }
-    assembleTask.get().dependsOn(buildTask)
 
+    val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(",") ?: when (OS.current) {
+        OS.macOS -> listOf(
+            "ios-device-arm64",
+            "ios-simulator-arm64",
+            "ios-simulator-x64",
+            "tvos-device-arm64",
+            "tvos-simulator-arm64",
+            "tvos-simulator-x64",
+            "watchos-device-arm32",
+            "watchos-device-arm64",
+            "watchos-device-arm64_32",
+            "watchos-simulator-arm64",
+            "watchos-simulator-x64",
+            "macos-arm64",
+            "macos-x64",
+
+            "android-arm64",
+            "android-arm32",
+            "android-x64",
+            "android-x86",
+            "wasm",
+        )
+
+        OS.Linux -> listOf(
+            "linux-x64",
+            "linux-arm64",
+        )
+
+        OS.Windows -> listOf(
+            "mingw-x64",
+            "windows-x64",
+        )
+    }
     for (artifact in artifacts) {
         if (artifact.isPublished) continue
-        val zipTask = tasks.register<Zip>("zip${artifact.name}-$profile") {
-            dependsOn(buildTask)
-            dependsOn("writeMetadata${artifact.name}")
-            archiveFileName = "$profile.zip"
-            destinationDirectory = artifact.outputDir
-            archiveClassifier = profile
-            from(layout.buildDirectory.dir("conan/build/$pkg/$profile/output/${artifact.name}"))
+        tasks.register("writeMetadata${artifact.name}") {
+            dependsOn(initBuildTask)
+            doLast {
+                val root = artifact.outputDir.get().asFile
+                root.mkdirs()
+                File(root, "version.txt").writeText(artifact.version)
+                File(root, "licenseId.txt").writeText(artifact.license.id)
+            }
         }
-        assembleTask.get().dependsOn(zipTask)
+    }
+    for (profile in targets) {
+        if (artifacts.all { it.isPublished }) continue
+
+        val pkgProfileName = listOf(pkg, profile).joinToString("-")
+        val taskName = "assemble$pkgProfileName"
+        val buildTask = tasks.register(taskName) {
+            dependsOn(initBuildTask)
+            doLast {
+                build(pkg, pkgVersion, profile)
+            }
+        }
+        assembleTask.get().dependsOn(buildTask)
+
+        for (artifact in artifacts) {
+            if (artifact.isPublished) continue
+            val zipTask = tasks.register<Zip>("zip${artifact.name}-$profile") {
+                dependsOn(buildTask)
+                dependsOn("writeMetadata${artifact.name}")
+                archiveFileName = "$profile.zip"
+                destinationDirectory = artifact.outputDir
+                archiveClassifier = profile
+                from(layout.buildDirectory.dir("conan/build/$pkg/$profile/output/${artifact.name}"))
+            }
+            assembleTask.get().dependsOn(zipTask)
+        }
     }
 }
 

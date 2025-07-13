@@ -110,7 +110,6 @@ class CombinedConan(ConanFile):
             dep = self.dependencies[depname]
             includedir = dep.cpp_info.includedirs[0]
             libdir = dep.cpp_info.libdirs[0]
-            bindir = dep.cpp_info.bindirs[0]
             base_output_path = join(self.build_folder, "output", depname)
 
             copy(self, "*.h", includedir, join(base_output_path, "include"))
@@ -129,8 +128,3 @@ class CombinedConan(ConanFile):
                     "a"
                 ]:
                     copy(self, libName + "." + ext, libdir, join(base_output_path, "lib"))
-
-            # Windows only
-            for binName in ["libcrypto-3-x64", "libssl-3-x64"]:
-                for ext in ["dll"]:
-                    copy(self, binName + "." + ext, bindir, join(base_output_path, "bin"))
