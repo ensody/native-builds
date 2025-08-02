@@ -1,4 +1,0 @@
-include(ios)
-[settings]
-arch=x86_64
-os.sdk=iphonesimulator

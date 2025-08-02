@@ -1,0 +1,39 @@
+{
+  "name": "nativebuilds",
+  "version": "0.0.1",
+  "dependencies": [
+    {
+      "name": "curl",
+      "default-features": false,
+      "features": [
+        "http2",
+        "http3",
+        "openssl"
+      ]
+    },
+    {
+      "name": "lz4"
+    },
+    {
+      "name": "nghttp2"
+    },
+    {
+      "name": "nghttp3"
+    },
+    {
+      "name": "ngtcp2",
+      "features": [
+        "openssl"
+      ]
+    },
+    {
+      "name": "openssl"
+    },
+    {
+      "name": "zlib"
+    },
+    {
+      "name": "zstd"
+    }
+  ]
+}

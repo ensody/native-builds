@@ -1,6 +1,7 @@
 plugins {
     `kotlin-dsl`
     id("java-gradle-plugin")
+    alias(libs.plugins.kotlinx.serialization)
 }
 
 dependencies {

@@ -1,16 +1,22 @@
 # Native builds of C/C++ libraries
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/openssl?label=openssl&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/openssl)
-[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/libcurl?label=libcurl&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/libcurl)
-[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/libnghttp2?label=libnghttp2&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/libnghttp2)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/curl?label=curl&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/curl)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp2?label=nghttp2&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp2)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp3?label=nghttp3&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp3)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/ngtcp2?label=ngtcp2&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/ngtcp2)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4?label=lz4&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib?label=zlib&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd?label=zstd&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd)
 
-This project regularly builds the latest available Conan version of
+This project regularly builds the latest available vcpkg version of the following libraries:
 
 * OpenSSL
-* libcurl
-* libnghttp2
+* curl
+* nghttp2
+* nghttp3
+* ngtcp2
+* lz4
 * zlib
 * zstd
 

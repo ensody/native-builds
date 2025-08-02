@@ -1,4 +1,0 @@
-include(apple)
-[settings]
-os=iOS
-os.version=10.0

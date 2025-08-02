@@ -1,199 +1,134 @@
+import com.ensody.buildlogic.BuildTarget
+import com.ensody.buildlogic.GroupId
 import com.ensody.buildlogic.OS
 import com.ensody.buildlogic.cli
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.request.get
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import com.ensody.buildlogic.loadBuildPackages
 
 plugins {
     id("com.ensody.build-logic.base")
     alias(libs.plugins.maven.publish)
 }
 
-enum class License(val id: String, val longName: String, val url: String) {
-    Apache2(
-        "Apache-2.0",
-        "The Apache Software License, Version 2.0",
-        "https://www.apache.org/licenses/LICENSE-2.0.txt",
-    ),
-    BSD3("BSD-3-Clause", "BSD 3-Clause", "https://opensource.org/license/BSD-3-Clause"),
-    MIT("MIT", "The MIT License", "https://opensource.org/license/mit"),
-    Curl("curl", "curl License", "https://spdx.org/licenses/curl.html"),
-    ZLib("Zlib", "zlib License", "https://www.zlib.net/zlib_license.html"),
-    ;
-
-    companion object {
-        fun get(licenseId: String): License =
-            values().find { it.id == licenseId }
-                ?: error("License not found for id: $licenseId")
-    }
-}
-
-val GroupId = "com.ensody.nativebuilds"
-
-val client = HttpClient(OkHttp) {
-    expectSuccess = false
-}
-
-val pythonVersion = cli("python3", "--version").removePrefix("Python ").replace(Regex("""[^\d\.A-Za-z\-]"""), "_")
-val venvPath = file(".venv/$pythonVersion")
-
-val venvsRoot = venvPath.parentFile
-for (child in venvsRoot.listFiles().orEmpty()) {
-    if (child == venvPath) continue
-    child.deleteRecursively()
-}
-if (!venvPath.exists()) {
-    venvPath.parentFile.mkdirs()
-    cli("python3", "-m", "venv", "$venvPath", inheritIO = true)
-}
-val venvBin = "$venvPath/" + if (OS.current == OS.Windows) "Scripts" else "bin"
-cli("$venvBin/pip", "install", "-U", "conan", inheritIO = true)
-runCatching { cli("$venvBin/conan", "profile", "detect") }
-
-val conanPath = layout.buildDirectory.dir("conan").get().asFile
-val initBuildTask = tasks.register("cleanConan") {
+val nativeBuildPath = layout.buildDirectory.dir("nativebuilds").get().asFile
+val initBuildTask = tasks.register("cleanNativeBuild") {
     doFirst {
-        conanPath.deleteRecursively()
+        nativeBuildPath.deleteRecursively()
+        // If we don't delete this, vcpkg will think that the package might already be installed and skip the output
+        // to x-packages-root.
+        layout.projectDirectory.dir("vcpkg_installed").asFile.deleteRecursively()
     }
 }
-val assembleTask = tasks.register("assembleAll")
 
-val publicationGroups = listOf(
-    listOf("libcurl", "libnghttp2", "openssl", "zlib"),
-    listOf("zstd"),
-)
-publicationGroups.forEach { publicationGroup ->
-    val pkg = publicationGroup.joinToString("-")
+val packages = loadBuildPackages(rootDir)
+println(packages.joinToString("\n") { "$it" })
 
-    val versionsRaw = cli("$venvBin/conan", "search", publicationGroup.first(), "-f", "json", "-v", "quiet")
-    val pkgVersion = Json.decodeFromString<JsonObject>(versionsRaw).jsonObject
-        .getValue("conancenter").jsonObject
-        .keys.last()
-        .split("/").last()
-    val graphRaw =
-        cli("$venvBin/conan", "graph", "info", "packages/$pkg", "--version=$pkgVersion", "-f", "json", "-v", "quiet")
-    val artifacts = Json.decodeFromString<JsonObject>(graphRaw)
-        .getValue("graph").jsonObject
-        .getValue("nodes").jsonObject
-        .values.mapNotNull { nodes ->
-            nodes.jsonObject.run {
-                getValue("name").jsonPrimitive.contentOrNull?.takeIf { it in publicationGroup }?.let { name ->
-                    val version = getValue("version").jsonPrimitive.contentOrNull
-                    version?.let {
-                        Artifact(
-                            pkg = pkg,
-                            name = name,
-                            version = version,
-                            license = License.get(getValue("license").jsonPrimitive.content),
-                        )
-                    }
-                }
-            }
-        }
-
-    val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(",") ?: when (OS.current) {
+val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(",")?.map {
+    BuildTarget.valueOf(it)
+}?.distinct()
+    ?: when (OS.current) {
         OS.macOS -> listOf(
-            "ios-device-arm64",
-            "ios-simulator-arm64",
-            "ios-simulator-x64",
-            "tvos-device-arm64",
-            "tvos-simulator-arm64",
-            "tvos-simulator-x64",
-            "watchos-device-arm32",
-            "watchos-device-arm64",
-            "watchos-device-arm64_32",
-            "watchos-simulator-arm64",
-            "watchos-simulator-x64",
-            "macos-arm64",
-            "macos-x64",
+            BuildTarget.iosArm64,
+            BuildTarget.iosSimulatorArm64,
+            BuildTarget.iosX64,
 
-            "android-arm64",
-            "android-arm32",
-            "android-x64",
-            "android-x86",
-            "wasm",
+//            BuildTarget.tvosArm64,
+//            BuildTarget.tvosSimulatorArm64,
+//            BuildTarget.tvosX64,
+
+//            BuildTarget.watchosArm32,
+//            BuildTarget.watchosDeviceArm64,
+//            BuildTarget.watchosArm64,
+//            BuildTarget.watchosSimulatorArm64,
+//            BuildTarget.watchosX64,
+
+            BuildTarget.macosArm64,
+            BuildTarget.macosX64,
         )
 
         OS.Linux -> listOf(
-            "linux-x64",
-            "linux-arm64",
+            BuildTarget.linuxX64,
+            BuildTarget.linuxArm64,
+
+            BuildTarget.androidNativeArm64,
+            BuildTarget.androidNativeArm32,
+            BuildTarget.androidNativeX64,
+            BuildTarget.androidNativeX86,
         )
 
         OS.Windows -> listOf(
-            "mingw-x64",
-            "windows-x64",
+            BuildTarget.mingwX64,
+            BuildTarget.windowsX64,
         )
     }
-    for (artifact in artifacts) {
-        if (artifact.isPublished) continue
-        tasks.register("writeMetadata${artifact.name}") {
-            dependsOn(initBuildTask)
-            doLast {
-                val root = artifact.outputDir.get().asFile
-                root.mkdirs()
-                File(root, "version.txt").writeText(artifact.version)
-                File(root, "licenseId.txt").writeText(artifact.license.id)
-            }
+
+val assembleTask = tasks.register("assembleAll").get()
+for (target in targets) {
+    if (packages.all { it.isPublished(target) }) continue
+
+    val assemble = tasks.register("assemble-${target.name}") {
+        group = "build"
+        dependsOn(initBuildTask)
+        doLast {
+            cli(
+                "./vcpkg/vcpkg",
+                "install",
+                "--triplet",
+                target.triplet,
+                "--x-packages-root",
+                "$nativeBuildPath/${target.name}",
+                inheritIO = true,
+            )
         }
     }
-    for (profile in targets) {
-        if (artifacts.all { it.isPublished }) continue
+    assembleTask.dependsOn(assemble)
+    for (pkg in packages) {
+        if (pkg.isPublished(target)) continue
 
-        val pkgProfileName = listOf(pkg, profile).joinToString("-")
-        val taskName = "assemble$pkgProfileName"
-        val buildTask = tasks.register(taskName) {
-            dependsOn(initBuildTask)
-            doLast {
-                build(pkg, pkgVersion, profile)
+        val artifactName = "${pkg.name}-${target.name}"
+        val zipTask = tasks.register<Zip>("zip-$artifactName") {
+            dependsOn(assembleTask)
+            archiveFileName = "$artifactName.zip"
+            destinationDirectory = layout.buildDirectory.dir("nativebuilds-artifacts")
+            from(layout.buildDirectory.dir("nativebuilds/${target.name}/${pkg.name}_${target.triplet}")) {
+                include("debug/**", "include/**", "lib/**")
+                exclude("debug/lib/pkgconfig", "lib/pkgconfig")
             }
         }
-        assembleTask.get().dependsOn(buildTask)
 
-        for (artifact in artifacts) {
-            if (artifact.isPublished) continue
-            val zipTask = tasks.register<Zip>("zip${artifact.name}-$profile") {
-                dependsOn(buildTask)
-                dependsOn("writeMetadata${artifact.name}")
-                archiveFileName = "$profile.zip"
-                destinationDirectory = artifact.outputDir
-                archiveClassifier = profile
-                from(layout.buildDirectory.dir("conan/build/$pkg/$profile/output/${artifact.name}"))
-            }
-            assembleTask.get().dependsOn(zipTask)
-        }
-    }
-}
-
-for (artifactPath in file("build/conan/artifacts").listFiles().orEmpty()) {
-    val zipFiles = artifactPath.listFiles().orEmpty().filter { it.extension == "zip" }
-    if (System.getenv("ASSEMBLE_ONLY") != "true" && zipFiles.isNotEmpty()) {
-        val artifactName = artifactPath.name
-        val artifactVersion = File(artifactPath, "version.txt").readText().trim()
-        val artifactLicenseId = File(artifactPath, "licenseId.txt").readText().trim()
-        val artifactLicense = License.get(artifactLicenseId)
         publishing {
             publications {
                 create<MavenPublication>(artifactName) {
                     artifactId = artifactName
                     groupId = GroupId
-                    version = artifactVersion
+                    version = pkg.version
                     pom {
                         licenses {
                             license {
-                                name = artifactLicense.longName
-                                url = artifactLicense.url
+                                name = pkg.license.longName
+                                url = pkg.license.url
                             }
                         }
                     }
-                    for (zipFile in zipFiles) {
-                        artifact(zipFile) {
-                            classifier = zipFile.nameWithoutExtension
+                    artifact(zipTask)
+                }
+            }
+        }
+    }
+}
+for (pkg in packages) {
+    if (pkg.isPublished || OS.current != OS.macOS) continue
+
+    publishing {
+        publications {
+            create<MavenPublication>(pkg.name) {
+                artifactId = pkg.name
+                groupId = GroupId
+                version = pkg.version
+                pom {
+                    licenses {
+                        license {
+                            name = pkg.license.longName
+                            url = pkg.license.url
                         }
                     }
                 }
@@ -233,40 +168,4 @@ publishing {
             url = outputDir.toURI()
         }
     }
-}
-
-fun build(pkg: String, version: String, profile: String, shared: Boolean = false) {
-    val sharedValue = if (shared) "True" else "False"
-    cli(
-        "$venvBin/conan",
-        "install",
-        "packages/$pkg",
-        "--output-folder",
-        layout.buildDirectory.dir("conan/build/$pkg/$profile").get().asFile.path,
-        "--build=missing",
-        "--version=$version",
-        "-pr:b",
-        "default",
-        "-pr:h",
-        "profiles/$profile",
-        "-o",
-        "*:shared=$sharedValue",
-        inheritIO = true,
-    )
-}
-
-data class Artifact(
-    val pkg: String,
-    val name: String,
-    val version: String,
-    val license: License,
-) {
-    val outputDir = layout.buildDirectory.dir("conan/artifacts/$name")
-
-    val isPublished: Boolean =
-        runBlocking {
-            val groupPath = GroupId.replace(".", "/")
-            client.get("https://repo1.maven.org/maven2/$groupPath/$name/$version/$name-$version.pom")
-                .status.value == 200
-        }
 }

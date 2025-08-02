@@ -1,3 +1,0 @@
-include(android)
-[settings]
-arch=x86_64

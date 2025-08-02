@@ -1,4 +1,0 @@
-include(apple)
-[settings]
-os=watchOS
-os.version=7.0
