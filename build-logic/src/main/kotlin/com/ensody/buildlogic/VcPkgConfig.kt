@@ -148,7 +148,7 @@ enum class BuildTarget(val triplet: String) {
     iosX64("x64-ios"),
 
     watchosDeviceArm64("arm64-watchos"),
-    watchosArm64("arm64_32-watchos"),
+    watchosArm64("arm6432-watchos"),
     watchosArm32("arm-watchos"),
     watchosSimulatorArm64("arm64-watchos-simulator"),
     watchosX64("x64-watchos-simulator"),
