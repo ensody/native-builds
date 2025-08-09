@@ -72,13 +72,8 @@ private class BuildRegistry(val root: File) {
         for (feature in pkg.features) {
             deps.putAll(
                 pkg.config.features.getValue(feature).dependencies
-                    .filter { it.name != pkg.name }
-                    .filter {
-                        check(it.defaultFeatures) {
-                            "Feature $feature trying to set non-default dependency features: $it"
-                        }
-                        !it.host
-                    }.associateBy { it.name },
+                    .filter { it.name != pkg.name && !it.host }
+                    .associateBy { it.name },
             )
         }
         for (dep in deps.values) {
