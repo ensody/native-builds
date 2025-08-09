@@ -52,7 +52,7 @@ private class BuildRegistry(val root: File) {
             BuildPackage(
                 name = dependency.name,
                 version = config.version,
-                features = config.resolveFeatures(features).sorted(),
+                features = config.resolveFeatures(features.map { it.name }).sorted(),
                 config = config,
             )
         }
@@ -183,7 +183,7 @@ data class VcPkgConfig(
     val features: Map<String, VcPkgFeature> = emptyMap(),
     val license: String = "",
     @SerialName("default-features")
-    val defaultFeatures: List<String> = emptyList(),
+    val defaultFeatures: List<VcPkgDefaultFeature> = emptyList(),
 ) {
     fun resolveFeatures(features: List<String>): Set<String> {
         val toProcess = features.toMutableSet()
@@ -193,7 +193,7 @@ data class VcPkgConfig(
             toProcess.remove(feature)
             result.add(feature)
             val subfeatures = this.features.getValue(feature).dependencies.filter { it.name == name }.flatMap {
-                it.features
+                it.features.map { it.name }
             }.toSet() - result
             toProcess.addAll(subfeatures)
         }
@@ -213,7 +213,14 @@ data class VcPkgDependency(
     val host: Boolean = false,
     @SerialName("default-features")
     val defaultFeatures: Boolean = true,
-    val features: List<String> = emptyList(),
+    val features: List<VcPkgDefaultFeature> = emptyList(),
+)
+
+@Serializable(with = VcPkgDefaultFeatureSerializer::class)
+@KeepGeneratedSerializer
+data class VcPkgDefaultFeature(
+    val name: String,
+    val platform: String? = null,
 )
 
 @Serializable
@@ -240,6 +247,28 @@ internal object VcPkgDependencySerializer : KSerializer<VcPkgDependency> {
             VcPkgDependency(element.content, host = false, defaultFeatures = true, features = emptyList())
         } else {
             decoder.json.decodeFromJsonElement(VcPkgDependency.generatedSerializer(), element)
+        }
+    }
+}
+
+internal object VcPkgDefaultFeatureSerializer : KSerializer<VcPkgDefaultFeature> {
+    override val descriptor: SerialDescriptor =
+        SerialDescriptor("VcPkgDefaultFeature", VcPkgDefaultFeature.generatedSerializer().descriptor)
+
+    override fun serialize(
+        encoder: Encoder,
+        value: VcPkgDefaultFeature,
+    ) {
+        encoder.encodeSerializableValue(VcPkgDefaultFeature.generatedSerializer(), value)
+    }
+
+    override fun deserialize(decoder: Decoder): VcPkgDefaultFeature {
+        decoder as JsonDecoder
+        val element = decoder.decodeJsonElement()
+        return if (element is JsonPrimitive && element.isString) {
+            VcPkgDefaultFeature(element.content)
+        } else {
+            decoder.json.decodeFromJsonElement(VcPkgDefaultFeature.generatedSerializer(), element)
         }
     }
 }
