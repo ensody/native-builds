@@ -35,11 +35,11 @@ val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(
             BuildTarget.tvosSimulatorArm64,
             BuildTarget.tvosX64,
 
-//            BuildTarget.watchosArm32,
-//            BuildTarget.watchosDeviceArm64,
-//            BuildTarget.watchosArm64,
-//            BuildTarget.watchosSimulatorArm64,
-//            BuildTarget.watchosX64,
+            BuildTarget.watchosArm32,
+            BuildTarget.watchosDeviceArm64,
+            BuildTarget.watchosArm64,
+            BuildTarget.watchosSimulatorArm64,
+            BuildTarget.watchosX64,
 
             BuildTarget.macosArm64,
             BuildTarget.macosX64,
