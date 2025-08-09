@@ -11,6 +11,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.KeepGeneratedSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
@@ -92,16 +93,19 @@ fun loadBuildPackages(root: File): List<BuildPackage> {
     return registry.packages.values.sortedBy { it.name }
 }
 
+@Serializable
 data class BuildPackage(
     val name: String,
     val version: String,
     val features: List<String>,
     val config: VcPkgConfig,
 ) {
+    @Transient
     val license: License = License.get(config.license)
 
-    val isPublished: Boolean =
+    val isPublished: Boolean by lazy {
         isPublished(null)
+    }
 
     fun isPublished(target: BuildTarget?): Boolean =
         runBlocking {
@@ -167,6 +171,33 @@ enum class BuildTarget(val triplet: String) {
     windowsX64("x64-windows-static"),
 
     wasm32("wasm32-emscripten"),
+    ;
+
+    fun isNative(): Boolean =
+        when (this) {
+            iosArm64,
+            iosSimulatorArm64,
+            iosX64,
+            watchosDeviceArm64,
+            watchosArm64,
+            watchosArm32,
+            watchosSimulatorArm64,
+            watchosX64,
+            tvosArm64,
+            tvosSimulatorArm64,
+            tvosX64,
+            androidNativeArm64,
+            androidNativeArm32,
+            androidNativeX64,
+            androidNativeX86,
+            macosArm64,
+            macosX64,
+            linuxArm64,
+            linuxX64,
+            mingwX64,
+            windowsX64 -> true
+            wasm32 -> false
+        }
 }
 
 @Serializable

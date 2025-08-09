@@ -20,4 +20,6 @@ kotlin-js-store
 Pods
 
 /vcpkg
+/vcpkg-tool
 /vcpkg_installed
+/generated-kotlin-wrappers
