@@ -46,7 +46,7 @@ Each static library (e.g. OpenSSL) is packaged like any other Kotlin module, so 
 It's even possible to substitute the static library with a debug version.
 
 Finally, this project allows sharing/reusing the same underlying static library (e.g. OpenSSL or libcurl) in different projects.
-For example, cryptography-kotlin could depend on libcrypto.a and Ktor's Curl engine could also depend on libcrypto.a (and libssl.a and libcurl.a) without causing duplication or symbol conflicts.
+For example, a KMP crypto library could depend on libcrypto.a and Ktor could also depend on libcrypto.a without causing duplication or symbol conflicts.
 
 ## Usage
 
@@ -54,19 +54,20 @@ Add the dependencies, based on the Maven modules mentioned above, to your `gradl
 
 ```toml
 [versions]
-openssl = "3.5.2"
+openssl = "3.5.2.0.1"
+zstd = "1.5.7.0.1"
 nativebuilds = "0.1.0"
 
 [libraries]
 # KMP wrapper module for libcrypto.a
-openssl-libcrypto = { module = "com.ensody.nativebuilds:openssl-libcrypto", version.ref = "openssl" }
+nativebuilds-openssl-libcrypto = { module = "com.ensody.nativebuilds:openssl-libcrypto", version.ref = "openssl" }
 # KMP wrapper module for libssl.a
-openssl-libssl = { module = "com.ensody.nativebuilds:openssl-libssl", version.ref = "openssl" }
-# Needed to integrate the OpenSSL headers for cinterop (only if you need to call the C API directly)
-openssl-raw = { module = "com.ensody.nativebuilds:openssl", version.ref = "openssl" }
+nativebuilds-openssl-libssl = { module = "com.ensody.nativebuilds:openssl-libssl", version.ref = "openssl" }
+# Needed to integrate the OpenSSL headers for cinterop (only if you need to call the C API directly).
+nativebuilds-openssl-raw = { module = "com.ensody.nativebuilds:openssl", version.ref = "openssl" }
 
-# Note: Most libraries consist of only one binary, so a single entry is sufficient
-zstd = { module = "com.ensody.nativebuilds:zstd", version = "1.5.7" }
+# Most libraries consist of only one binary, so a single dependency is sufficient
+nativebuilds-zstd = { module = "com.ensody.nativebuilds:zstd", version.ref = "zstd" }
 
 [plugins]
 nativebuilds = { id = "com.ensody.nativebuilds", version.ref = "nativebuilds" }
@@ -91,19 +92,19 @@ kotlin {
 
     // Add the KMP dependency containing the pre-built static library (the .a file)
     sourceSets.nativeMain.dependencies {
-        api(libs.openssl.libcrypto)
+        api(libs.nativebuilds.openssl.libcrypto)
     }
 
     // If you need direct access to the libcrypto/OpenSSL API you have to activate cinterop
     // for the OpenSSL header files.
-    // Note: for zstd you'd use the libs.zstd both here and in sourceSets.nativeMain.
-    cinterops(libs.openssl.raw) {
+    // Note: for zstd you'd use libs.nativebuilds.zstd both here and in sourceSets.nativeMain.
+    cinterops(libs.nativebuilds.openssl.raw) {
         definitionFile.set(file("src/nativeMain/cinterop/openssl.def"))
     }
 }
 ```
 
-Create `src/nativeMain/cinterop/openssl.def`, but focus only on the headers. The native .a is already part of `api(libs.openssl.libcrypto)` above.
+Create `src/nativeMain/cinterop/openssl.def`, but don't define staticLibraries. The native .a is already part of `api(libs.nativebuilds.openssl.libcrypto)` above.
 
 ```
 package = my.package.openssl

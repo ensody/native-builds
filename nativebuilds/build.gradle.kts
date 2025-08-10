@@ -35,23 +35,14 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
 
 // This is used to publish a new version in case the build script has changed fundamentally
 val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    // TODO: Publish with real suffix once we've tested in practice
-//    "curl" to mapOf("8.15.0" to ".0.1"),
-//    "lz4" to mapOf("1.10.0" to ".0.1"),
-//    "nghttp2" to mapOf("1.66.0" to ".0.1"),
-//    "nghttp3" to mapOf("1.11.0" to ".0.1"),
-//    "ngtcp2" to mapOf("1.14.0" to ".0.1"),
-//    "openssl" to mapOf("3.5.2" to ".0.1"),
-//    "zlib" to mapOf("1.3.1" to ".0.1"),
-//    "zstd" to mapOf("1.5.7" to ".0.1"),
-    "curl" to mapOf("8.15.0" to "-preview.1"),
-    "lz4" to mapOf("1.10.0" to "-preview.1"),
-    "nghttp2" to mapOf("1.66.0" to "-preview.1"),
-    "nghttp3" to mapOf("1.11.0" to "-preview.1"),
-    "ngtcp2" to mapOf("1.14.0" to "-preview.1"),
-    "openssl" to mapOf("3.5.2" to "-preview.1"),
-    "zlib" to mapOf("1.3.1" to "-preview.1"),
-    "zstd" to mapOf("1.5.7" to "-preview.1"),
+    "curl" to mapOf("8.15.0" to ".0.1"),
+    "lz4" to mapOf("1.10.0" to ".0.1"),
+    "nghttp2" to mapOf("1.66.0" to ".0.1"),
+    "nghttp3" to mapOf("1.11.0" to ".0.1"),
+    "ngtcp2" to mapOf("1.14.0" to ".0.1"),
+    "openssl" to mapOf("3.5.2" to ".0.1"),
+    "zlib" to mapOf("1.3.1" to ".0.1"),
+    "zstd" to mapOf("1.5.7" to ".0.1"),
 )
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
