@@ -33,6 +33,20 @@ This project regularly builds the latest available vcpkg version of the followin
   * `com.ensody.nativebuilds:zstd`: headers and static library
 
 The artifacts are published to Maven Central, so they can be easily consumed by Gradle and Kotlin Multiplatform projects.
+A Gradle plugin is also provided to simplify the integration of the header files.
+
+Apart from being easier to integrate, this project helps you stay up to date.
+The NativeBuilds automatically publish new versions to Maven Central.
+Tools like Dependabot can notify you of version updates coming from NativeBuilds.
+For security critical libraries like OpenSSL this automation is very helpful and important.
+
+If you're a library author:
+This project also allows consumers of your library to update the underlying native library without you having to publish a new version of your own library.
+Each static library (e.g. OpenSSL) is packaged like any other Kotlin module, so the normal Gradle dependency resolution rules apply.
+It's even possible to substitute the static library with a debug version.
+
+Finally, this project allows sharing/reusing the same underlying static library (e.g. OpenSSL or libcurl) in different projects.
+For example, cryptography-kotlin could depend on libcrypto.a and Ktor's Curl engine could also depend on libcrypto.a (and libssl.a and libcurl.a) without causing duplication or symbol conflicts.
 
 ## Usage
 
@@ -80,16 +94,16 @@ kotlin {
         api(libs.openssl.libcrypto)
     }
 
-    // If you need direct access to the libcrypto/OpenSSL API you have to activate cinterop for the OpenSSL header files
+    // If you need direct access to the libcrypto/OpenSSL API you have to activate cinterop
+    // for the OpenSSL header files.
     // Note: for zstd you'd use the libs.zstd both here and in sourceSets.nativeMain.
     cinterops(libs.openssl.raw) {
         definitionFile.set(file("src/nativeMain/cinterop/openssl.def"))
     }
-
 }
 ```
 
-Create `src/nativeMain/cinterop/openssl.def`, but focus only on the headers (the native .a is already part of `api(libs.openssl.libcrypto)` above:
+Create `src/nativeMain/cinterop/openssl.def`, but focus only on the headers. The native .a is already part of `api(libs.openssl.libcrypto)` above.
 
 ```
 package = my.package.openssl
@@ -100,24 +114,6 @@ headers = openssl/evp.h \
           openssl/encoder.h \
           openssl/decoder.h \
           openssl/ec.h
-noStringConversion = OSSL_PARAM_construct_double \
-                     OSSL_PARAM_construct_int \
-                     OSSL_PARAM_construct_int32 \
-                     OSSL_PARAM_construct_int64 \
-                     OSSL_PARAM_construct_long \
-                     OSSL_PARAM_construct_size_t \
-                     OSSL_PARAM_construct_time_t \
-                     OSSL_PARAM_construct_uint \
-                     OSSL_PARAM_construct_uint32 \
-                     OSSL_PARAM_construct_uint64 \
-                     OSSL_PARAM_construct_ulong \
-                     OSSL_PARAM_construct_BN \
-                     OSSL_PARAM_construct_utf8_string \
-                     OSSL_PARAM_construct_utf8_ptr \
-                     OSSL_PARAM_construct_octet_string \
-                     OSSL_PARAM_construct_octet_ptr \
-                     OSSL_ENCODER_CTX_new_for_pkey \
-                     OSSL_DECODER_CTX_new_for_pkey
 compilerOpts = -DOPENSSL_NO_DEPRECATED
 ```
 
