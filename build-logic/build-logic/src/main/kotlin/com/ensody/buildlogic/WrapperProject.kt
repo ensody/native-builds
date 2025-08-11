@@ -10,13 +10,13 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import java.io.File
 
-fun KotlinMultiplatformExtension.addCinterops(libProjectName: String, libFileName: String) {
+fun KotlinMultiplatformExtension.addCinterops(libProjectName: String, libFileName: String, debug: Boolean) {
     targets.withType<KotlinNativeTarget>().configureEach {
         compilations.getByName("main") {
             cinterops {
                 create(project.name) {
-                    val libDir =
-                        File("${project.rootDir}/generated-kotlin-wrappers/$libProjectName/libs/${target.name}/lib")
+                    val root = File("${project.rootDir}/generated-kotlin-wrappers/$libProjectName/libs/${target.name}")
+                    val libDir = File(root, if (debug) "debug/lib" else "lib")
                     extraOpts("-libraryPath", libDir.absolutePath)
                     extraOpts(
                         "-staticLibrary",
@@ -36,6 +36,7 @@ fun generateBuildGradle(
     license: License,
     targets: List<File>,
     includeZip: Boolean,
+    debug: Boolean,
 ): String {
     var result = """
 import com.ensody.buildlogic.License
@@ -55,7 +56,7 @@ setupBuildLogic {
     kotlin {
         ${targets.joinToString("\n        ") { "${it.name}()" }}
 
-        addCinterops(${projectName.quote()}, ${libName.quote()})
+        addCinterops(libProjectName = ${projectName.quote()}, libFileName = ${libName.quote()}, debug = $debug)
     }
 }
 
@@ -90,9 +91,12 @@ for (target in listOf(${targets.joinToString(", ") { it.name.quote() }})) {
 
 fun Project.registerZipTask(libProjectName: String, child: File): Pair<String, TaskProvider<Zip>> {
     val artifactName = "$libProjectName-${child.name.lowercase()}"
+    val mainZipTask = tasks.findByName("zipNativeBuilds") ?: tasks.register("zipNativeBuilds").get()
     return artifactName to tasks.register<Zip>("zip-$artifactName") {
         archiveFileName.set("$artifactName.zip")
         destinationDirectory.set(layout.buildDirectory.dir("nativebuilds-artifacts"))
-        from(child)
-    }
+        from(child) {
+            include("include/**")
+        }
+    }.also { mainZipTask.dependsOn(it) }
 }

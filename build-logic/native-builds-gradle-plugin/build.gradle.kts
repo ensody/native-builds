@@ -36,13 +36,9 @@ configure<MavenPublishBaseExtension> {
         signAllPublications()
     }
     pom {
-        name = if (rootProject.name.equals(project.name, true)) {
-            rootProject.name
-        } else {
-            "${rootProject.name}: ${project.name}"
-        }
+        name = "NativeBuilds Gradle plugin"
         description = project.description?.takeIf { it.isNotBlank() }
-            ?: "Gradle plugin for integrating native libraries or headers from the NativeBuilds project"
+            ?: "Gradle plugin for integrating headers of native libs from the NativeBuilds project"
         url = "https://github.com/ensody/native-builds"
         scm {
             url.set(this@pom.url)

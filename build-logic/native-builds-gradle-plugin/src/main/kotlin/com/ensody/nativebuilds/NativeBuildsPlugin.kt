@@ -46,7 +46,6 @@ class NativeBuildsPlugin : Plugin<Project> {
 fun KotlinMultiplatformExtension.cinterops(
     vararg artifacts: Provider<MinimalExternalModuleDependency>,
     includeHeadersPath: Boolean = true,
-    includeLibraryPath: Boolean = false,
     block: DefaultCInteropSettings.() -> Unit,
 ) {
     targets.withType<KotlinNativeTarget>().configureEach {
@@ -54,7 +53,6 @@ fun KotlinMultiplatformExtension.cinterops(
             cinterops(
                 artifacts = artifacts,
                 includeHeadersPath = includeHeadersPath,
-                includeLibraryPath = includeLibraryPath,
                 block = block,
             )
         }
@@ -64,7 +62,6 @@ fun KotlinMultiplatformExtension.cinterops(
 fun KotlinNativeCompilation.cinterops(
     vararg artifacts: Provider<MinimalExternalModuleDependency>,
     includeHeadersPath: Boolean = true,
-    includeLibraryPath: Boolean = false,
     block: DefaultCInteropSettings.() -> Unit,
 ) {
     val name = artifacts.first().get().name
@@ -84,9 +81,6 @@ fun KotlinNativeCompilation.cinterops(
             val basePath = "nativebuilds/$name-${target.name}"
             if (includeHeadersPath) {
                 includeDirs(project.layout.buildDirectory.dir("$basePath/include"))
-            }
-            if (includeLibraryPath) {
-                extraOpts("-libraryPath", project.layout.buildDirectory.dir("$basePath/lib").get().asFile.path)
             }
             block()
         }

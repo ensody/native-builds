@@ -1,5 +1,6 @@
 # Native builds of C/C++ libraries for Kotlin Multiplatform
 
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/native-builds-gradle-plugin?label=native-builds-gradle-plugin&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/native-builds-gradle-plugin)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/openssl?label=openssl&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/openssl)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/curl?label=curl&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/curl)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp2?label=nghttp2&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp2)
@@ -64,9 +65,9 @@ nativebuilds-openssl-libcrypto = { module = "com.ensody.nativebuilds:openssl-lib
 # KMP wrapper module for libssl.a
 nativebuilds-openssl-libssl = { module = "com.ensody.nativebuilds:openssl-libssl", version.ref = "openssl" }
 # Needed to integrate the OpenSSL headers for cinterop (only if you need to call the C API directly).
-nativebuilds-openssl-raw = { module = "com.ensody.nativebuilds:openssl", version.ref = "openssl" }
+nativebuilds-openssl-headers = { module = "com.ensody.nativebuilds:openssl", version.ref = "openssl" }
 
-# Most libraries consist of only one binary, so a single dependency is sufficient
+# Unlike OpenSSL and ngtcp2, most libraries (like zstd) consist of only one binary, so a single dependency is sufficient
 nativebuilds-zstd = { module = "com.ensody.nativebuilds:zstd", version.ref = "zstd" }
 
 [plugins]
@@ -98,7 +99,7 @@ kotlin {
     // If you need direct access to the libcrypto/OpenSSL API you have to activate cinterop
     // for the OpenSSL header files.
     // Note: for zstd you'd use libs.nativebuilds.zstd both here and in sourceSets.nativeMain.
-    cinterops(libs.nativebuilds.openssl.raw) {
+    cinterops(libs.nativebuilds.openssl.headers) {
         definitionFile.set(file("src/nativeMain/cinterop/openssl.def"))
     }
 }

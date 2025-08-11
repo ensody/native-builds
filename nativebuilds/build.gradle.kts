@@ -35,14 +35,14 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
 
 // This is used to publish a new version in case the build script has changed fundamentally
 val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    "curl" to mapOf("8.15.0" to ".0.1"),
-    "lz4" to mapOf("1.10.0" to ".0.1"),
-    "nghttp2" to mapOf("1.66.0" to ".0.1"),
-    "nghttp3" to mapOf("1.11.0" to ".0.1"),
-    "ngtcp2" to mapOf("1.14.0" to ".0.1"),
-    "openssl" to mapOf("3.5.2" to ".0.1"),
-    "zlib" to mapOf("1.3.1" to ".0.1"),
-    "zstd" to mapOf("1.5.7" to ".0.1"),
+    "curl" to mapOf("8.15.0" to ".1"),
+    "lz4" to mapOf("1.10.0" to ".1"),
+    "nghttp2" to mapOf("1.66.0" to ".1"),
+    "nghttp3" to mapOf("1.11.0" to ".1"),
+    "ngtcp2" to mapOf("1.14.0" to ".1"),
+    "openssl" to mapOf("3.5.2" to ".1"),
+    "zlib" to mapOf("1.3.1" to ".1"),
+    "zstd" to mapOf("1.5.7" to ".1"),
 )
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
@@ -120,7 +120,10 @@ for (target in targets) {
                 val destPath = File(wrappersPath, "${pkg.name}/libs/${target.name}")
                 copy {
                     from(sourceDir) {
-                        include("debug/**", "include/**", "lib/**")
+                        include("include/**", "lib/**")
+                        if (System.getenv("INCLUDE_DEBUG_BUILDS") == "true") {
+                            include("debug/**")
+                        }
                         exclude("debug/lib/pkgconfig", "lib/pkgconfig")
                     }
                     into(destPath)
@@ -172,8 +175,22 @@ for (pkg in packages) {
                         license = pkg.license,
                         targets = projectTargets,
                         includeZip = true,
+                        debug = false,
                     ),
                 )
+                if (System.getenv("INCLUDE_DEBUG_BUILDS") == "true") {
+                    File(wrappersPath, "${pkg.name}--debug/build.gradle.kts").writeTextIfDifferent(
+                        generateBuildGradle(
+                            projectName = pkg.name,
+                            libName = libNames.single(),
+                            version = pkg.version,
+                            license = pkg.license,
+                            targets = projectTargets,
+                            includeZip = false,
+                            debug = true,
+                        ),
+                    )
+                }
             } else {
                 for (libName in libNames) {
                     File(wrappersPath, "${pkg.name}-$libName/build.gradle.kts").writeTextIfDifferent(
@@ -184,8 +201,22 @@ for (pkg in packages) {
                             license = pkg.license,
                             targets = projectTargets,
                             includeZip = false,
+                            debug = false,
                         ),
                     )
+                    if (System.getenv("INCLUDE_DEBUG_BUILDS") == "true") {
+                        File(wrappersPath, "${pkg.name}-$libName--debug/build.gradle.kts").writeTextIfDifferent(
+                            generateBuildGradle(
+                                projectName = pkg.name,
+                                libName = libName,
+                                version = pkg.version,
+                                license = pkg.license,
+                                targets = projectTargets,
+                                includeZip = false,
+                                debug = true,
+                            ),
+                        )
+                    }
                 }
             }
         }

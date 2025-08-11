@@ -60,7 +60,7 @@ fun Project.withGeneratedBuildFile(category: String, path: String, sourceSet: St
 
 fun Project.getDefaultPackageName(): String =
     group.toString().split(".").let { prefix ->
-        prefix + name.split("-").dropWhile { it == prefix.last() }
+        prefix + name.split(Regex("-+")).dropWhile { it == prefix.last() }
     }.joinToString(".")
 
 internal val generatedFiles = mutableMapOf<String, MutableSet<File>>()
