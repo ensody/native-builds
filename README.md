@@ -1,6 +1,5 @@
 # Native builds of C/C++ libraries for Kotlin Multiplatform
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/native-builds-gradle-plugin?label=native-builds-gradle-plugin&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/native-builds-gradle-plugin)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/openssl?label=openssl&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/openssl)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/curl?label=curl&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/curl)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp2?label=nghttp2&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp2)
@@ -9,6 +8,8 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4?label=lz4&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib?label=zlib&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd?label=zstd&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd)
+
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/native-builds-gradle-plugin?label=native-builds-gradle-plugin&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/native-builds-gradle-plugin)
 
 This project regularly builds the latest available vcpkg version of the following libraries:
 
@@ -55,9 +56,10 @@ Add the dependencies, based on the Maven modules mentioned above, to your `gradl
 
 ```toml
 [versions]
-openssl = "3.5.2.0.1"
-zstd = "1.5.7.0.1"
-nativebuilds = "0.1.0"
+# Note: these might not be the latest version numbers. Please check the version badges above.
+openssl = "3.5.2.1"
+zstd = "1.5.7.1"
+nativebuilds = "0.3.0"
 
 [libraries]
 # KMP wrapper module for libcrypto.a
