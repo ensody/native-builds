@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.DefaultCInteropSettings
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
+import java.io.File
 
 class NativeBuildsPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -26,12 +27,15 @@ class NativeBuildsPlugin : Plugin<Project> {
             tasks.register("unzipNativeBuilds") {
                 inputs.files(nativeBuild)
                 outputs.dir(layout.buildDirectory.dir("nativebuilds"))
+                val artifactsProvider = nativeBuild.incoming.artifactView {
+                    lenient(true)
+                }.artifacts
 
                 doLast {
-                    nativeBuild.incoming.artifacts.forEach { artifact ->
+                    artifactsProvider.artifacts.forEach { artifact ->
                         val identifier = artifact.id as ModuleComponentArtifactIdentifier
                         val name = identifier.componentIdentifier.moduleIdentifier.name
-                        val outputDir = project.layout.buildDirectory.dir("nativebuilds/$name").get().asFile
+                        val outputDir = File(outputs.files.singleFile, name)
                         unzipTo(outputDir, artifact.file)
                     }
                 }
