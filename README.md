@@ -50,7 +50,7 @@ Add the dependencies, based on the Maven modules mentioned above, to your `gradl
 # Note: these might not be the latest version numbers. Please check the version badges above.
 openssl = "3.6.0"
 zstd = "1.5.7.1"
-nativebuilds = "0.3.0"
+nativebuilds = "0.4.0"
 
 [libraries]
 # KMP wrapper module for libcrypto.a
