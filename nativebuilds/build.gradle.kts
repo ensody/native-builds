@@ -6,6 +6,7 @@ import com.ensody.buildlogic.GroupId
 import com.ensody.buildlogic.OS
 import com.ensody.buildlogic.cli
 import com.ensody.buildlogic.generateBuildGradle
+import com.ensody.buildlogic.isOnArm64
 import com.ensody.buildlogic.json
 import com.ensody.buildlogic.loadBuildPackages
 import com.ensody.buildlogic.registerZipTask
@@ -75,15 +76,20 @@ val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(
             BuildTarget.macosX64,
         )
 
-        OS.Linux -> listOf(
-            BuildTarget.linuxX64,
-            BuildTarget.linuxArm64,
+        OS.Linux -> if (isOnArm64) {
+            listOf(
+                BuildTarget.linuxArm64,
+            )
+        } else {
+            listOf(
+                BuildTarget.linuxX64,
 
-            BuildTarget.androidNativeArm64,
-            BuildTarget.androidNativeArm32,
-            BuildTarget.androidNativeX64,
-            BuildTarget.androidNativeX86,
-        )
+                BuildTarget.androidNativeArm64,
+                BuildTarget.androidNativeArm32,
+                BuildTarget.androidNativeX64,
+                BuildTarget.androidNativeX86,
+            )
+        }
 
         OS.Windows -> listOf(
             BuildTarget.mingwX64,

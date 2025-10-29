@@ -20,6 +20,8 @@ This project regularly builds the latest available vcpkg version of the followin
   * `com.ensody.nativebuilds:ngtcp2-libngtcp2_crypto_ossl`: OpenSSL helper library
 * **lz4** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4)
   * `com.ensody.nativebuilds:lz4`: headers and static library
+* **quickjs-ng** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/quickjs-ng?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/quickjs-ng)
+  * `com.ensody.nativebuilds:quickjs-ng`: headers and static library
 * **zlib** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib)
   * `com.ensody.nativebuilds:zlib`: headers and static library
 * **zstd** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd)

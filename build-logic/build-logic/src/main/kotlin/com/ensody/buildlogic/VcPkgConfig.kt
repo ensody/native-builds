@@ -141,6 +141,9 @@ enum class License(val id: String, val longName: String, val url: String) {
     }
 }
 
+private val arch = System.getProperty("os.arch")
+val isOnArm64 = "aarch64" in arch || "arm64" in arch
+
 enum class BuildTarget(val triplet: String) {
     iosArm64("arm64-ios"),
     iosSimulatorArm64("arm64-ios-simulator"),
