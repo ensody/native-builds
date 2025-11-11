@@ -4,27 +4,27 @@
 
 This project regularly builds the latest available vcpkg version of the following libraries:
 
-* **OpenSSL** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/openssl?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/openssl)
+* **OpenSSL** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/openssl?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/openssl)
   * `com.ensody.nativebuilds:openssl`: headers
   * `com.ensody.nativebuilds:openssl-libcrypto`: core crypto library
   * `com.ensody.nativebuilds:openssl-libssl`: TLS library (optional; depends on libcrypto)
-* **curl** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/curl?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/curl)
+* **curl** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/curl?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/curl)
   * `com.ensody.nativebuilds:curl`: headers and static library (depends on openssl, nghttp2, nghttp3, ngtcp2, zlib)
-* **nghttp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp2?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp2)
+* **nghttp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp2?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp2)
   * `com.ensody.nativebuilds:nghttp2`: headers and static library
-* **nghttp3** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp3?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp3)
+* **nghttp3** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp3?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp3)
   * `com.ensody.nativebuilds:nghttp3`: headers and static library
-* **ngtcp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/ngtcp2?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/ngtcp2)
+* **ngtcp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/ngtcp2?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/ngtcp2)
   * `com.ensody.nativebuilds:ngtcp2`: headers
   * `com.ensody.nativebuilds:ngtcp2-libngtcp2`: main static library
   * `com.ensody.nativebuilds:ngtcp2-libngtcp2_crypto_ossl`: OpenSSL helper library
-* **lz4** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4)
+* **lz4** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4)
   * `com.ensody.nativebuilds:lz4`: headers and static library
-* **quickjs-ng** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/quickjs-ng?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/quickjs-ng)
+* **quickjs-ng** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/quickjs-ng?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/quickjs-ng)
   * `com.ensody.nativebuilds:quickjs-ng`: headers and static library
-* **zlib** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib)
+* **zlib** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib)
   * `com.ensody.nativebuilds:zlib`: headers and static library
-* **zstd** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd?label=)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd)
+* **zstd** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd)
   * `com.ensody.nativebuilds:zstd`: headers and static library
 
 The artifacts are published to Maven Central, so they can be easily consumed by Gradle and Kotlin Multiplatform projects.
