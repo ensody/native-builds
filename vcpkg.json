@@ -33,9 +33,6 @@
       "name": "zlib"
     },
     {
-      "name": "quickjs-ng"
-    },
-    {
       "name": "zstd"
     }
   ]
