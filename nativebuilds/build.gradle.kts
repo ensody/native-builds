@@ -22,7 +22,11 @@ plugins {
 
 setupBuildLogic {}
 
+// TODO: Debug builds will have to be done via overlays. They're not fully supported yet.
+val includeDebugBuilds = System.getenv("INCLUDE_DEBUG_BUILDS") == "true"
+
 val nativeBuildPath = layout.buildDirectory.dir("nativebuilds").get().asFile
+val overlayTriplets = layout.buildDirectory.dir("nativebuilds-triplets").get().asFile
 val wrappersPath = File("$rootDir/generated-kotlin-wrappers")
 val initBuildTask = tasks.register("cleanNativeBuild") {
     doFirst {
@@ -31,19 +35,32 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
         // If we don't delete this, vcpkg will think that the package might already be installed and skip the output
         // to x-packages-root.
         File("$rootDir/vcpkg_installed").deleteRecursively()
+
+        overlayTriplets.deleteRecursively()
+        overlayTriplets.mkdirs()
+        val communityTriplets = File("$rootDir/vcpkg/triplets/community")
+        val baseTriplets = (communityTriplets.listFiles()!! + communityTriplets.parentFile.listFiles()!!).filter {
+            it.isFile && it.extension == "cmake"
+        }
+        for (triplet in BuildTarget.values().map { it.triplet }) {
+            val file = baseTriplets.first { it.nameWithoutExtension == triplet }
+            val destination = File(overlayTriplets, file.name)
+            file.copyTo(destination)
+            destination.appendText("\nset(VCPKG_BUILD_TYPE release)\n")
+        }
     }
 }
 
 // This is used to publish a new version in case the build script has changed fundamentally
 val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    "curl" to mapOf("8.15.0" to ".1"),
-    "lz4" to mapOf("1.10.0" to ".1"),
-    "nghttp2" to mapOf("1.66.0" to ".1"),
-    "nghttp3" to mapOf("1.11.0" to ".1"),
-    "ngtcp2" to mapOf("1.14.0" to ".1"),
-    "openssl" to mapOf("3.5.2" to ".1"),
-    "zlib" to mapOf("1.3.1" to ".1"),
-    "zstd" to mapOf("1.5.7" to ".1"),
+    "curl" to mapOf("8.17.0" to ".1"),
+    "lz4" to mapOf("1.10.0" to ".2"),
+    "nghttp2" to mapOf("1.68.0" to ".1"),
+    "nghttp3" to mapOf("1.13.1" to ".1"),
+    "ngtcp2" to mapOf("1.18.0" to ".1"),
+    "openssl" to mapOf("3.6.0" to ".1"),
+    "zlib" to mapOf("1.3.1" to ".2"),
+    "zstd" to mapOf("1.5.7" to ".2"),
 )
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
@@ -113,6 +130,7 @@ for (target in targets) {
             cli(
                 "./vcpkg/vcpkg",
                 "install",
+                "--overlay-triplets=$overlayTriplets",
                 "--triplet",
                 target.triplet,
                 "--x-packages-root",
@@ -127,7 +145,7 @@ for (target in targets) {
                 copy {
                     from(sourceDir) {
                         include("include/**", "lib/**")
-                        if (System.getenv("INCLUDE_DEBUG_BUILDS") == "true") {
+                        if (includeDebugBuilds) {
                             include("debug/**")
                         }
                         exclude("debug/lib/pkgconfig", "lib/pkgconfig")
@@ -184,7 +202,7 @@ for (pkg in packages) {
                         debug = false,
                     ),
                 )
-                if (System.getenv("INCLUDE_DEBUG_BUILDS") == "true") {
+                if (includeDebugBuilds) {
                     File(wrappersPath, "${pkg.name}--debug/build.gradle.kts").writeTextIfDifferent(
                         generateBuildGradle(
                             projectName = pkg.name,
@@ -210,7 +228,7 @@ for (pkg in packages) {
                             debug = false,
                         ),
                     )
-                    if (System.getenv("INCLUDE_DEBUG_BUILDS") == "true") {
+                    if (includeDebugBuilds) {
                         File(wrappersPath, "${pkg.name}-$libName--debug/build.gradle.kts").writeTextIfDifferent(
                             generateBuildGradle(
                                 projectName = pkg.name,
