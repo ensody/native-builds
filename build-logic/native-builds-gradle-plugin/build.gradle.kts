@@ -12,6 +12,7 @@ group = "com.ensody.nativebuilds"
 
 dependencies {
     compileOnly(libs.gradle.kotlin)
+    implementation(libs.serialization.json)
 }
 
 gradlePlugin {

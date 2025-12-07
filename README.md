@@ -4,26 +4,32 @@
 
 This project regularly builds the latest available vcpkg version of the following libraries:
 
-* **OpenSSL** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/openssl?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/openssl)
-  * `com.ensody.nativebuilds:openssl`: headers
+* **OpenSSL** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/openssl-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/openssl)
+  * `com.ensody.nativebuilds:openssl-headers`: headers
   * `com.ensody.nativebuilds:openssl-libcrypto`: core crypto library
   * `com.ensody.nativebuilds:openssl-libssl`: TLS library (optional; depends on libcrypto)
-* **curl** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/curl?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/curl)
-  * `com.ensody.nativebuilds:curl`: headers and static library (depends on openssl, nghttp2, nghttp3, ngtcp2, zlib)
-* **nghttp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp2?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp2)
-  * `com.ensody.nativebuilds:nghttp2`: headers and static library
-* **nghttp3** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp3?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp3)
-  * `com.ensody.nativebuilds:nghttp3`: headers and static library
-* **ngtcp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/ngtcp2?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/ngtcp2)
-  * `com.ensody.nativebuilds:ngtcp2`: headers
+* **curl** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/curl-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/curl)
+  * `com.ensody.nativebuilds:curl-headers`: headers
+  * `com.ensody.nativebuilds:curl-libcurl`: static library (depends on openssl, nghttp2, nghttp3, ngtcp2, zlib)
+* **nghttp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp2-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp2)
+  * `com.ensody.nativebuilds:nghttp2-headers`: headers
+  * `com.ensody.nativebuilds:nghttp2-libnghttp2`: static library
+* **nghttp3** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp3-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp3)
+  * `com.ensody.nativebuilds:nghttp3-headers`: headers
+  * `com.ensody.nativebuilds:nghttp3-libnghttp3`: static library
+* **ngtcp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/ngtcp2-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/ngtcp2)
+  * `com.ensody.nativebuilds:ngtcp2-headers`: headers
   * `com.ensody.nativebuilds:ngtcp2-libngtcp2`: main static library
   * `com.ensody.nativebuilds:ngtcp2-libngtcp2_crypto_ossl`: OpenSSL helper library
-* **lz4** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4)
-  * `com.ensody.nativebuilds:lz4`: headers and static library
-* **zlib** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib)
-  * `com.ensody.nativebuilds:zlib`: headers and static library
-* **zstd** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd)
-  * `com.ensody.nativebuilds:zstd`: headers and static library
+* **lz4** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4)
+  * `com.ensody.nativebuilds:lz4-headers`: headers
+  * `com.ensody.nativebuilds:lz4-libzl4`: static library
+* **zlib** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib)
+  * `com.ensody.nativebuilds:zlib-headers`: headers
+  * `com.ensody.nativebuilds:zlib-libz`: static library
+* **zstd** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd)
+  * `com.ensody.nativebuilds:zstd-headers`: headers
+  * `com.ensody.nativebuilds:zstd-libzstd`: static library
 
 The artifacts are published to Maven Central, so they can be easily consumed by Gradle and Kotlin Multiplatform projects.
 A Gradle plugin is also provided to simplify the integration of the header files.
@@ -49,7 +55,6 @@ Add the dependencies, based on the Maven modules mentioned above, to your `gradl
 [versions]
 # Note: these might not be the latest version numbers. Please check the version badges above.
 openssl = "3.6.0"
-zstd = "1.5.7.1"
 nativebuilds = "0.4.0"
 
 [libraries]
@@ -58,10 +63,7 @@ nativebuilds-openssl-libcrypto = { module = "com.ensody.nativebuilds:openssl-lib
 # KMP wrapper module for libssl.a
 nativebuilds-openssl-libssl = { module = "com.ensody.nativebuilds:openssl-libssl", version.ref = "openssl" }
 # Needed to integrate the OpenSSL headers for cinterop (only if you need to call the C API directly).
-nativebuilds-openssl-headers = { module = "com.ensody.nativebuilds:openssl", version.ref = "openssl" }
-
-# Unlike OpenSSL and ngtcp2, most libraries (like zstd) consist of only one binary, so a single dependency is sufficient
-nativebuilds-zstd = { module = "com.ensody.nativebuilds:zstd", version.ref = "zstd" }
+nativebuilds-openssl-headers = { module = "com.ensody.nativebuilds:openssl-headers", version.ref = "openssl" }
 
 [plugins]
 nativebuilds = { id = "com.ensody.nativebuilds", version.ref = "nativebuilds" }
@@ -91,7 +93,6 @@ kotlin {
 
     // If you need direct access to the libcrypto/OpenSSL API you have to activate cinterop
     // for the OpenSSL header files.
-    // Note: for zstd you'd use libs.nativebuilds.zstd both here and in sourceSets.nativeMain.
     cinterops(libs.nativebuilds.openssl.headers) {
         definitionFile.set(file("src/nativeMain/cinterop/openssl.def"))
     }
@@ -119,6 +120,18 @@ kotlin.mpp.enableCInteropCommonization=true
 ```
 
 After the Gradle sync you can import the OpenSSL APIs within nativeMain (or iosMain etc.).
+
+## Local testing
+
+```shell
+export ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.13599879
+export BUILD_TARGETS=macosArm64,macosX64,iosArm64,iosSimulatorArm64,iosX64,androidNativeArm64,androidNativeArm32
+./gradlew assembleProjects
+PUBLISHING=true ./gradlew generateBuildScripts
+PUBLISHING=true WITH_WRAPPERS=true ./gradlew publishAllPublicationsToLocalMavenRepository
+```
+
+The artifacts will be placed in build/localmaven.
 
 ## License
 

@@ -144,7 +144,7 @@ enum class License(val id: String, val longName: String, val url: String) {
 private val arch = System.getProperty("os.arch")
 val isOnArm64 = "aarch64" in arch || "arm64" in arch
 
-enum class BuildTarget(val triplet: String) {
+enum class BuildTarget(val triplet: String, val androidAbi: String? = null, val jvmDynamicLib: Boolean = false) {
     iosArm64("arm64-ios"),
     iosSimulatorArm64("arm64-ios-simulator"),
     iosX64("x64-ios"),
@@ -159,22 +159,24 @@ enum class BuildTarget(val triplet: String) {
     tvosSimulatorArm64("arm64-tvos-simulator"),
     tvosX64("x64-tvos-simulator"),
 
-    androidNativeArm64("arm64-android"),
-    androidNativeArm32("arm-neon-android"),
-    androidNativeX64("x64-android"),
-    androidNativeX86("x86-android"),
+    androidNativeArm64("arm64-android", androidAbi = "arm64-v8a"),
+    androidNativeArm32("arm-neon-android", androidAbi = "armeabi-v7a"),
+    androidNativeX64("x64-android", androidAbi = "x86_64"),
+    androidNativeX86("x86-android", androidAbi = "x86"),
 
-    macosArm64("arm64-osx"),
-    macosX64("x64-osx"),
+    macosArm64("arm64-osx", jvmDynamicLib = true),
+    macosX64("x64-osx", jvmDynamicLib = true),
 
-    linuxArm64("arm64-linux"),
-    linuxX64("x64-linux"),
+    linuxArm64("arm64-linux", jvmDynamicLib = true),
+    linuxX64("x64-linux", jvmDynamicLib = true),
 
-    mingwX64("x64-mingw-static"),
-    windowsX64("x64-windows-static"),
+    mingwX64("x64-mingw-static", jvmDynamicLib = true),
+    windowsX64("x64-windows-static", jvmDynamicLib = true),
 
     wasm32("wasm32-emscripten"),
     ;
+
+    val dynamicLib: Boolean = androidAbi != null || jvmDynamicLib
 
     fun isNative(): Boolean =
         when (this) {

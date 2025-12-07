@@ -1,3 +1,4 @@
+import android.databinding.tool.ext.toCamelCase
 import com.android.build.gradle.internal.cxx.io.writeTextIfDifferent
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.ensody.buildlogic.BuildPackage
@@ -12,8 +13,11 @@ import com.ensody.buildlogic.loadBuildPackages
 import com.ensody.buildlogic.registerZipTask
 import com.ensody.buildlogic.renameLeafName
 import com.ensody.buildlogic.setupBuildLogic
-import kotlinx.serialization.decodeFromString
+import io.ktor.http.quote
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 plugins {
     id("com.ensody.build-logic.base")
@@ -24,6 +28,7 @@ setupBuildLogic {}
 
 // TODO: Debug builds will have to be done via overlays. They're not fully supported yet.
 val includeDebugBuilds = System.getenv("INCLUDE_DEBUG_BUILDS") == "true"
+val isPublishing = System.getenv("PUBLISHING") == "true"
 
 val nativeBuildPath = layout.buildDirectory.dir("nativebuilds").get().asFile
 val overlayTriplets = layout.buildDirectory.dir("nativebuilds-triplets").get().asFile
@@ -31,6 +36,14 @@ val wrappersPath = File("$rootDir/generated-kotlin-wrappers")
 val initBuildTask = tasks.register("cleanNativeBuild") {
     doFirst {
         nativeBuildPath.deleteRecursively()
+        if (!isPublishing) {
+            wrappersPath.deleteRecursively()
+            wrappersPath.mkdirs()
+            File(
+                wrappersPath,
+                "pkg-${OS.current.name}-$splitId.json",
+            ).writeTextIfDifferent(json.encodeToString(packages))
+        }
 
         // If we don't delete this, vcpkg will think that the package might already be installed and skip the output
         // to x-packages-root.
@@ -42,25 +55,32 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
         val baseTriplets = (communityTriplets.listFiles()!! + communityTriplets.parentFile.listFiles()!!).filter {
             it.isFile && it.extension == "cmake"
         }
+        val dynamicTriplets = BuildTarget.values().filter { it.dynamicLib }.map { it.triplet }
         for (triplet in BuildTarget.values().map { it.triplet }) {
             val file = baseTriplets.first { it.nameWithoutExtension == triplet }
             val destination = File(overlayTriplets, file.name)
             file.copyTo(destination)
             destination.appendText("\nset(VCPKG_BUILD_TYPE release)\n")
+
+            if (triplet in dynamicTriplets) {
+                val dynamic = File(overlayTriplets, "$triplet-dynamic.cmake")
+                destination.copyTo(dynamic)
+                dynamic.appendText("\nset(VCPKG_LIBRARY_LINKAGE dynamic)\n")
+            }
         }
     }
 }
 
 // This is used to publish a new version in case the build script has changed fundamentally
 val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    "curl" to mapOf("8.17.0" to ".1"),
-    "lz4" to mapOf("1.10.0" to ".2"),
-    "nghttp2" to mapOf("1.68.0" to ".1"),
-    "nghttp3" to mapOf("1.13.1" to ".1"),
-    "ngtcp2" to mapOf("1.18.0" to ".1"),
-    "openssl" to mapOf("3.6.0" to ".1"),
-    "zlib" to mapOf("1.3.1" to ".2"),
-    "zstd" to mapOf("1.5.7" to ".2"),
+    "curl" to mapOf("8.17.0" to ".2"),
+    "lz4" to mapOf("1.10.0" to ".3"),
+    "nghttp2" to mapOf("1.68.0" to ".2"),
+    "nghttp3" to mapOf("1.13.1" to ".2"),
+    "ngtcp2" to mapOf("1.18.0" to ".2"),
+    "openssl" to mapOf("3.6.0" to ".2"),
+    "zlib" to mapOf("1.3.1" to ".3"),
+    "zstd" to mapOf("1.5.7" to ".3"),
 )
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
@@ -127,41 +147,59 @@ for (target in targets) {
         group = "build"
         dependsOn(initBuildTask)
         doLast {
-            cli(
-                "./vcpkg/vcpkg",
-                "install",
-                "--overlay-triplets=$overlayTriplets",
-                "--triplet",
-                target.triplet,
-                "--x-packages-root",
-                "$nativeBuildPath/${target.name}",
-                inheritIO = true,
-            )
-            for (pkg in packages) {
-                if (pkg.isPublished) continue
+            for (dynamic in listOf(false, target.dynamicLib).distinct()) {
+                val baseNativeBuildPath = File(nativeBuildPath, if (dynamic) "dynamic" else "static")
+                val baseWrappersPath = File(wrappersPath, if (dynamic) "dynamic" else "static")
+                val triplet = if (dynamic) "${target.triplet}-dynamic" else target.triplet
+                cli(
+                    "./vcpkg/vcpkg",
+                    "install",
+                    "--overlay-triplets=$overlayTriplets",
+                    "--triplet",
+                    triplet,
+                    "--x-packages-root",
+                    "$baseNativeBuildPath/${target.name}",
+                    inheritIO = true,
+                )
+                for (pkg in packages) {
+                    if (pkg.isPublished) continue
 
-                val sourceDir = layout.buildDirectory.dir("nativebuilds/${target.name}/${pkg.name}_${target.triplet}")
-                val destPath = File(wrappersPath, "${pkg.name}/libs/${target.name}")
-                copy {
-                    from(sourceDir) {
-                        include("include/**", "lib/**")
-                        if (includeDebugBuilds) {
-                            include("debug/**")
-                        }
-                        exclude("debug/lib/pkgconfig", "lib/pkgconfig")
+                    val sourceDir = File(baseNativeBuildPath, "${target.name}/${pkg.name}_$triplet")
+                    val libs = File(sourceDir, "lib").listFiles().orEmpty()
+                    val symlinks = libs.filter { it.canonicalPath != it.absolutePath }.groupBy { it.canonicalFile }
+                    for ((canonical, linkedFrom) in symlinks) {
+                        val bestLink = linkedFrom.minBy { it.name.length }
+                        bestLink.delete()
+                        canonical.renameTo(bestLink)
+                        (linkedFrom - bestLink).forEach { it.delete() }
                     }
-                    into(destPath)
+
+                    val destPath = File(baseWrappersPath, "${pkg.name}/libs/${target.name}")
+                    copy {
+                        from(sourceDir) {
+                            include("lib/**")
+                            if (!dynamic) {
+                                include("include/**")
+                            }
+                            if (includeDebugBuilds) {
+                                include("debug/**")
+                            }
+                            exclude("debug/lib/pkgconfig", "lib/pkgconfig")
+                        }
+                        into(destPath)
+                    }
+                    File(destPath, "lib/libzlib.a").renameLeafName("libz.a")
+                    File(destPath, "lib/libzlib.so").renameLeafName("libz.so")
+                    File(destPath, "debug/lib/libcurl-d.a").renameLeafName("libcurl.a")
+                    File(destPath, "debug/lib/liblz4d.a").renameLeafName("liblz4.a")
                 }
-                File(destPath, "lib/libzlib.a").renameLeafName("libz.a")
-                File(destPath, "debug/lib/libcurl-d.a").renameLeafName("libcurl.a")
-                File(destPath, "debug/lib/liblz4d.a").renameLeafName("liblz4.a")
             }
         }
     }
     assembleTask.dependsOn(assemble)
 }
 
-if (System.getenv("PUBLISHING") == "true") {
+if (isPublishing) {
     wrappersPath.listFiles().orEmpty().filter { it.name.startsWith("pkg-") && it.extension == "json" }.flatMap {
         json.decodeFromString<List<BuildPackage>>(it.readText()).map { it.name to it.version }
     }.groupBy({ it.first }, { it.second }).forEach { (lib, versions) ->
@@ -169,87 +207,101 @@ if (System.getenv("PUBLISHING") == "true") {
             "Library $lib was built in different versions on the different CI nodes! Versions: ${versions.distinct()}"
         }
     }
-} else {
-    File(wrappersPath, "pkg-${OS.current.name}-$splitId.json").writeTextIfDifferent(json.encodeToString(packages))
 }
 
 val generateBuildScriptsTask = tasks.register("generateBuildScripts")
 for (pkg in packages) {
-    if (System.getenv("PUBLISHING") != "true" || pkg.isPublished) continue
+    if (!isPublishing || pkg.isPublished) continue
 
-    val pkgPath = File(wrappersPath, pkg.name)
+    val baseWrappersPath = File(wrappersPath, "static")
+    val pkgPath = File(baseWrappersPath, pkg.name)
 
     val libsPath = File(pkgPath, "libs")
     val libTargets = libsPath.listFiles().orEmpty().filter { !it.name.startsWith(".") }
-    val projectTargets = libTargets.filter { BuildTarget.valueOf(it.name).isNative() }
+    val projectTargets = libTargets.mapNotNull { BuildTarget.valueOf(it.name).takeIf { it.isNative() } }
     val libNames = File(libTargets.firstOrNull() ?: continue, "lib").listFiles().orEmpty().filter {
         it.extension in listOf("a", "lib")
     }.map {
         it.nameWithoutExtension
     }.toSet()
 
+    fun copyDynamicLib(pkgDir: File, libName: String) {
+        for (target in projectTargets) {
+            if (!target.dynamicLib) continue
+            val sharedLib =
+                File(wrappersPath, "dynamic/${pkg.name}/libs/${target.name}/lib").listFiles().orEmpty().find {
+                    it.nameWithoutExtension == libName && it.extension in listOf("so", "dylib", "dll")
+                } ?: error("Could not find shared lib file for: $libName")
+            val destination = if (target.androidAbi != null) {
+                File(pkgDir, "src/androidMain/jniLibs/${target.androidAbi}/${sharedLib.name}")
+            } else {
+                File(pkgDir, "src/jvmMain/resources/jni/${target.name}/${sharedLib.name}")
+            }
+            destination.parentFile.mkdirs()
+            if (destination.exists()) {
+                destination.delete()
+            }
+            sharedLib.copyTo(destination)
+        }
+        for (variant in listOf("jvm", "android")) {
+            val config = File(pkgDir, "src/${variant}Main/resources/META-INF/nativebuild.json")
+            config.parentFile.mkdirs()
+            config.writeTextIfDifferent(
+                buildJsonObject {
+                    put("package", pkg.name)
+                    put("lib", libName)
+                }.toString(),
+            )
+        }
+        if (projectTargets.any { it.jvmDynamicLib }) {
+            val className = "Jni${libName.toCamelCase()}"
+            File(pkgDir, "src/jvmCommonMain/kotlin/com/ensody/nativebuilds/${pkg.name.lowercase()}/$className.kt")
+                .writeTextIfDifferent(
+                    """
+                package com.ensody.nativebuilds.${pkg.name.lowercase()}
+
+                public object $className
+                """.trimIndent().trim() + "\n",
+                )
+        }
+    }
+
     val pkgScriptTask = tasks.register("generateBuildScripts-${pkg.name}") {
         doLast {
-            if (libNames.size == 1) {
-                File(pkgPath, "build.gradle.kts").writeTextIfDifferent(
+            for (libName in libNames) {
+                val pkgDir = File(baseWrappersPath, "${pkg.name}-$libName")
+                File(pkgDir, "build.gradle.kts").writeTextIfDifferent(
                     generateBuildGradle(
                         projectName = pkg.name,
-                        libName = libNames.single(),
+                        libName = libName,
                         version = pkg.version,
                         license = pkg.license,
                         targets = projectTargets,
-                        includeZip = true,
                         debug = false,
                     ),
                 )
+                copyDynamicLib(pkgDir, libName)
                 if (includeDebugBuilds) {
-                    File(wrappersPath, "${pkg.name}--debug/build.gradle.kts").writeTextIfDifferent(
-                        generateBuildGradle(
-                            projectName = pkg.name,
-                            libName = libNames.single(),
-                            version = pkg.version,
-                            license = pkg.license,
-                            targets = projectTargets,
-                            includeZip = false,
-                            debug = true,
-                        ),
-                    )
-                }
-            } else {
-                for (libName in libNames) {
-                    File(wrappersPath, "${pkg.name}-$libName/build.gradle.kts").writeTextIfDifferent(
+                    File(baseWrappersPath, "${pkg.name}-$libName--debug/build.gradle.kts").writeTextIfDifferent(
                         generateBuildGradle(
                             projectName = pkg.name,
                             libName = libName,
                             version = pkg.version,
                             license = pkg.license,
                             targets = projectTargets,
-                            includeZip = false,
-                            debug = false,
+                            debug = true,
                         ),
                     )
-                    if (includeDebugBuilds) {
-                        File(wrappersPath, "${pkg.name}-$libName--debug/build.gradle.kts").writeTextIfDifferent(
-                            generateBuildGradle(
-                                projectName = pkg.name,
-                                libName = libName,
-                                version = pkg.version,
-                                license = pkg.license,
-                                targets = projectTargets,
-                                includeZip = false,
-                                debug = true,
-                            ),
-                        )
-                    }
                 }
             }
         }
     }
     generateBuildScriptsTask.dependsOn(pkgScriptTask)
 
-    val remainingTargets = if (libNames.size > 1) libTargets else libTargets - projectTargets
-    for (child in remainingTargets) {
-        val (artifactName, zipTask) = registerZipTask(pkg.name, child)
+    val headersPkgName = "${pkg.name}-headers"
+    // Sometimes the headers are different per target (e.g. OpenSSL's configuration.h).
+    for (child in libTargets) {
+        val (artifactName, zipTask) = registerZipTask(headersPkgName, child)
         publishing {
             publications {
                 create<MavenPublication>(artifactName) {
@@ -270,20 +322,17 @@ for (pkg in packages) {
         }
     }
 
-    if (libNames.size > 1) {
-        // There is no Gradle project for pkg.name, so create a minimal POM publication
-        publishing {
-            publications {
-                create<MavenPublication>(pkg.name) {
-                    artifactId = pkg.name
-                    groupId = GroupId
-                    version = pkg.version
-                    pom {
-                        licenses {
-                            license {
-                                name = pkg.license.longName
-                                url = pkg.license.url
-                            }
+    publishing {
+        publications {
+            create<MavenPublication>(headersPkgName) {
+                artifactId = headersPkgName
+                groupId = GroupId
+                version = pkg.version
+                pom {
+                    licenses {
+                        license {
+                            name = pkg.license.longName
+                            url = pkg.license.url
                         }
                     }
                 }

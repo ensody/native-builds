@@ -15,7 +15,7 @@ fun KotlinMultiplatformExtension.addCinterops(libProjectName: String, libFileNam
         compilations.getByName("main") {
             cinterops {
                 create(project.name) {
-                    val root = File("${project.rootDir}/generated-kotlin-wrappers/$libProjectName/libs/${target.name}")
+                    val root = File("${project.rootDir}/generated-kotlin-wrappers/static/$libProjectName/libs/${target.name}")
                     val libDir = File(root, if (debug) "debug/lib" else "lib")
                     extraOpts("-libraryPath", libDir.absolutePath)
                     extraOpts(
@@ -34,8 +34,7 @@ fun generateBuildGradle(
     libName: String,
     version: String,
     license: License,
-    targets: List<File>,
-    includeZip: Boolean,
+    targets: List<BuildTarget>,
     debug: Boolean,
 ): String {
     var result = """
@@ -46,7 +45,7 @@ import com.ensody.buildlogic.setupBuildLogic
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 
 plugins {
-    id("org.jetbrains.kotlin.multiplatform")
+    id("${if (targets.any { it.androidAbi != null }) "com.ensody.build-logic.kmp" else "org.jetbrains.kotlin.multiplatform"}")
     id("com.ensody.build-logic.publish")
 }
 
@@ -55,6 +54,8 @@ version = ${version.quote()}
 setupBuildLogic {
     kotlin {
         ${targets.joinToString("\n        ") { "${it.name}()" }}
+        ${if (targets.any { it.jvmDynamicLib }) "jvm()" else ""}
+        ${if (targets.any { it.androidAbi != null }) "androidTarget()" else ""}
 
         addCinterops(libProjectName = ${projectName.quote()}, libFileName = ${libName.quote()}, debug = $debug)
     }
@@ -71,20 +72,6 @@ extensions.configure<MavenPublishBaseExtension> {
     }
 }
 """.trim() + "\n"
-
-    if (includeZip) {
-        result += """
-for (target in listOf(${targets.joinToString(", ") { it.name.quote() }})) {
-    val child = file("libs/" + target)
-    val (_, zipTask) = registerZipTask(${libName.quote()}, child)
-    publishing {
-        publications.named<MavenPublication>(child.name) {
-            artifact(zipTask)
-        }
-    }
-}
-        """.trim() + "\n"
-    }
 
     return result
 }
