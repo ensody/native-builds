@@ -144,7 +144,13 @@ enum class License(val id: String, val longName: String, val url: String) {
 private val arch = System.getProperty("os.arch")
 val isOnArm64 = "aarch64" in arch || "arm64" in arch
 
-enum class BuildTarget(val triplet: String, val androidAbi: String? = null, val jvmDynamicLib: Boolean = false) {
+enum class BuildTarget(
+    val triplet: String,
+    val baseDynamicTriplet: String = triplet,
+    val dynamicTriplet: String = baseDynamicTriplet.removeSuffix("-dynamic") + "-dynamic",
+    val androidAbi: String? = null,
+    val jvmDynamicLib: Boolean = false,
+) {
     iosArm64("arm64-ios"),
     iosSimulatorArm64("arm64-ios-simulator"),
     iosX64("x64-ios"),
@@ -170,7 +176,7 @@ enum class BuildTarget(val triplet: String, val androidAbi: String? = null, val 
     linuxArm64("arm64-linux", jvmDynamicLib = true),
     linuxX64("x64-linux", jvmDynamicLib = true),
 
-    mingwX64("x64-mingw-static", jvmDynamicLib = true),
+    mingwX64("x64-mingw-static", dynamicTriplet = "x64-mingw-dynamic", jvmDynamicLib = true),
     windowsX64("x64-windows-static", jvmDynamicLib = true),
 
     wasm32("wasm32-emscripten"),

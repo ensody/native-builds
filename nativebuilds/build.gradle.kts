@@ -13,9 +13,7 @@ import com.ensody.buildlogic.loadBuildPackages
 import com.ensody.buildlogic.registerZipTask
 import com.ensody.buildlogic.renameLeafName
 import com.ensody.buildlogic.setupBuildLogic
-import io.ktor.http.quote
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -55,17 +53,17 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
         val baseTriplets = (communityTriplets.listFiles()!! + communityTriplets.parentFile.listFiles()!!).filter {
             it.isFile && it.extension == "cmake"
         }
-        val dynamicTriplets = BuildTarget.values().filter { it.dynamicLib }.map { it.triplet }
-        for (triplet in BuildTarget.values().map { it.triplet }) {
-            val file = baseTriplets.first { it.nameWithoutExtension == triplet }
+        for (target in BuildTarget.values()) {
+            val file = baseTriplets.first { it.nameWithoutExtension == target.triplet }
             val destination = File(overlayTriplets, file.name)
             file.copyTo(destination)
             destination.appendText("\nset(VCPKG_BUILD_TYPE release)\n")
 
-            if (triplet in dynamicTriplets) {
-                val dynamic = File(overlayTriplets, "$triplet-dynamic.cmake")
-                destination.copyTo(dynamic)
-                dynamic.appendText("\nset(VCPKG_LIBRARY_LINKAGE dynamic)\n")
+            if (target.dynamicLib) {
+                val file = baseTriplets.first { it.nameWithoutExtension == target.baseDynamicTriplet }
+                val dynamic = File(overlayTriplets, "${target.dynamicTriplet}.cmake")
+                file.copyTo(dynamic)
+                dynamic.appendText("\nset(VCPKG_CRT_LINKAGE dynamic)\nset(VCPKG_LIBRARY_LINKAGE dynamic)\n")
             }
         }
     }
@@ -150,7 +148,7 @@ for (target in targets) {
             for (dynamic in listOf(false, target.dynamicLib).distinct()) {
                 val baseNativeBuildPath = File(nativeBuildPath, if (dynamic) "dynamic" else "static")
                 val baseWrappersPath = File(wrappersPath, if (dynamic) "dynamic" else "static")
-                val triplet = if (dynamic) "${target.triplet}-dynamic" else target.triplet
+                val triplet = if (dynamic) target.dynamicTriplet else target.triplet
                 cli(
                     "./vcpkg/vcpkg",
                     "install",
@@ -177,6 +175,9 @@ for (target in targets) {
                     val destPath = File(baseWrappersPath, "${pkg.name}/libs/${target.name}")
                     copy {
                         from(sourceDir) {
+                            if (dynamic) {
+                                include("bin/**.dll")
+                            }
                             include("lib/**")
                             if (!dynamic) {
                                 include("include/**")
@@ -188,10 +189,17 @@ for (target in targets) {
                         }
                         into(destPath)
                     }
+                    val binFolder = File(destPath, "bin")
+                    binFolder.listFiles().orEmpty().toList().forEach {
+                        if (it.extension == "dll") {
+                            it.renameTo(File(destPath, "lib/${it.name}"))
+                        }
+                    }
+                    if (binFolder.listFiles().isNullOrEmpty()) {
+                        binFolder.deleteRecursively()
+                    }
                     File(destPath, "lib/libzlib.a").renameLeafName("libz.a")
                     File(destPath, "lib/libzlib.so").renameLeafName("libz.so")
-                    File(destPath, "debug/lib/libcurl-d.a").renameLeafName("libcurl.a")
-                    File(destPath, "debug/lib/liblz4d.a").renameLeafName("liblz4.a")
                 }
             }
         }
@@ -220,7 +228,7 @@ for (pkg in packages) {
     val libTargets = libsPath.listFiles().orEmpty().filter { !it.name.startsWith(".") }
     val projectTargets = libTargets.mapNotNull { BuildTarget.valueOf(it.name).takeIf { it.isNative() } }
     val libNames = File(libTargets.firstOrNull() ?: continue, "lib").listFiles().orEmpty().filter {
-        it.extension in listOf("a", "lib")
+        it.extension in listOf("a", "lib", "so", "dylib", "dll")
     }.map {
         it.nameWithoutExtension
     }.toSet()
@@ -228,20 +236,23 @@ for (pkg in packages) {
     fun copyDynamicLib(pkgDir: File, libName: String) {
         for (target in projectTargets) {
             if (!target.dynamicLib) continue
-            val sharedLib =
-                File(wrappersPath, "dynamic/${pkg.name}/libs/${target.name}/lib").listFiles().orEmpty().find {
-                    it.nameWithoutExtension == libName && it.extension in listOf("so", "dylib", "dll")
-                } ?: error("Could not find shared lib file for: $libName")
-            val destination = if (target.androidAbi != null) {
-                File(pkgDir, "src/androidMain/jniLibs/${target.androidAbi}/${sharedLib.name}")
-            } else {
-                File(pkgDir, "src/jvmMain/resources/jni/${target.name}/${sharedLib.name}")
+            val sharedLibs =
+                File(wrappersPath, "dynamic/${pkg.name}/libs/${target.name}/lib").listFiles().orEmpty().filter {
+                    it.nameWithoutExtension.startsWith(libName) &&
+                        (it.extension in listOf("so", "dylib", "dll") || it.name.endsWith(".dll.a"))
+                }.takeIf { it.isNotEmpty() } ?: error("Could not find shared lib file for: $libName")
+            for (sharedLib in sharedLibs) {
+                val destination = if (target.androidAbi != null) {
+                    File(pkgDir, "src/androidMain/jniLibs/${target.androidAbi}/${sharedLib.name}")
+                } else {
+                    File(pkgDir, "src/jvmMain/resources/jni/${target.name}/${sharedLib.name}")
+                }
+                destination.parentFile.mkdirs()
+                if (destination.exists()) {
+                    destination.delete()
+                }
+                sharedLib.copyTo(destination)
             }
-            destination.parentFile.mkdirs()
-            if (destination.exists()) {
-                destination.delete()
-            }
-            sharedLib.copyTo(destination)
         }
         for (variant in listOf("jvm", "android")) {
             val config = File(pkgDir, "src/${variant}Main/resources/META-INF/nativebuild.json")
@@ -268,7 +279,7 @@ for (pkg in packages) {
 
     val pkgScriptTask = tasks.register("generateBuildScripts-${pkg.name}") {
         doLast {
-            for (libName in libNames) {
+            for (libName in libNames.sortedByDescending { it.length }) {
                 val pkgDir = File(baseWrappersPath, "${pkg.name}-$libName")
                 File(pkgDir, "build.gradle.kts").writeTextIfDifferent(
                     generateBuildGradle(
