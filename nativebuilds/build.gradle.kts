@@ -13,6 +13,7 @@ import com.ensody.buildlogic.loadBuildPackages
 import com.ensody.buildlogic.registerZipTask
 import com.ensody.buildlogic.renameLeafName
 import com.ensody.buildlogic.setupBuildLogic
+import io.ktor.http.quote
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -60,9 +61,9 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
             destination.appendText("\nset(VCPKG_BUILD_TYPE release)\n")
 
             if (target.dynamicLib) {
-                val file = baseTriplets.first { it.nameWithoutExtension == target.baseDynamicTriplet }
+                val libFile = baseTriplets.first { it.nameWithoutExtension == target.baseDynamicTriplet }
                 val dynamic = File(overlayTriplets, "${target.dynamicTriplet}.cmake")
-                file.copyTo(dynamic)
+                libFile.copyTo(dynamic)
                 dynamic.appendText("\nset(VCPKG_CRT_LINKAGE dynamic)\nset(VCPKG_LIBRARY_LINKAGE dynamic)\n")
             }
         }
@@ -71,14 +72,14 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
 
 // This is used to publish a new version in case the build script has changed fundamentally
 val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    "curl" to mapOf("8.17.0" to ".2"),
-    "lz4" to mapOf("1.10.0" to ".3"),
-    "nghttp2" to mapOf("1.68.0" to ".2"),
-    "nghttp3" to mapOf("1.13.1" to ".2"),
-    "ngtcp2" to mapOf("1.18.0" to ".2"),
-    "openssl" to mapOf("3.6.0" to ".2"),
-    "zlib" to mapOf("1.3.1" to ".3"),
-    "zstd" to mapOf("1.5.7" to ".3"),
+    "curl" to mapOf("8.17.0" to ".4"),
+    "lz4" to mapOf("1.10.0" to ".4"),
+    "nghttp2" to mapOf("1.68.0" to ".4"),
+    "nghttp3" to mapOf("1.13.1" to ".4"),
+    "ngtcp2" to mapOf("1.18.0" to ".4"),
+    "openssl" to mapOf("3.6.0" to ".4"),
+    "zlib" to mapOf("1.3.1" to ".4"),
+    "zstd" to mapOf("1.5.7" to ".4"),
 )
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
@@ -233,18 +234,27 @@ for (pkg in packages) {
         it.nameWithoutExtension
     }.toSet()
 
-    fun copyDynamicLib(pkgDir: File, libName: String) {
+    fun copyDynamicLib(pkgDir: File, libName: String, exclude: Set<File>): Set<File> {
+        val targetsMap = mutableMapOf<String, String>()
+        val result = mutableSetOf<File>()
         for (target in projectTargets) {
             if (!target.dynamicLib) continue
             val sharedLibs =
                 File(wrappersPath, "dynamic/${pkg.name}/libs/${target.name}/lib").listFiles().orEmpty().filter {
-                    it.nameWithoutExtension.startsWith(libName) &&
+                    it !in exclude && it.nameWithoutExtension.startsWith(libName) &&
                         (it.extension in listOf("so", "dylib", "dll") || it.name.endsWith(".dll.a"))
                 }.takeIf { it.isNotEmpty() } ?: error("Could not find shared lib file for: $libName")
+            result.addAll(sharedLibs)
             for (sharedLib in sharedLibs) {
                 val destination = if (target.androidAbi != null) {
                     File(pkgDir, "src/androidMain/jniLibs/${target.androidAbi}/${sharedLib.name}")
                 } else {
+                    if (!sharedLib.name.endsWith(".dll.a")) {
+                        check(target.name !in targetsMap) {
+                            "ERROR: Multiple library candidates: ${sharedLib.name} and ${targetsMap[target.name]}"
+                        }
+                        targetsMap[target.name] = sharedLib.name
+                    }
                     File(pkgDir, "src/jvmMain/resources/jni/${target.name}/${sharedLib.name}")
                 }
                 destination.parentFile.mkdirs()
@@ -265,20 +275,30 @@ for (pkg in packages) {
             )
         }
         if (projectTargets.any { it.jvmDynamicLib }) {
-            val className = "Jni${libName.toCamelCase()}"
+            val className = "NativeBuildsJvmLib${libName.removePrefix("lib").toCamelCase()}"
             File(pkgDir, "src/jvmCommonMain/kotlin/com/ensody/nativebuilds/${pkg.name.lowercase()}/$className.kt")
                 .writeTextIfDifferent(
                     """
                 package com.ensody.nativebuilds.${pkg.name.lowercase()}
 
-                public object $className
+                import com.ensody.nativebuilds.loader.NativeBuildsJvmLib
+
+                public object $className : NativeBuildsJvmLib {
+                    override val packageName: String = ${pkg.name.quote()}
+                    override val libName: String = ${libName.quote()}
+                    override val platformFileName: Map<String, String> = mapOf(${targetsMap.entries.joinToString { (k, v) ->
+                        "${k.quote()} to ${v.quote()}"
+                    }})
+                }
                 """.trimIndent().trim() + "\n",
                 )
         }
+        return result
     }
 
     val pkgScriptTask = tasks.register("generateBuildScripts-${pkg.name}") {
         doLast {
+            val copied = mutableSetOf<File>()
             for (libName in libNames.sortedByDescending { it.length }) {
                 val pkgDir = File(baseWrappersPath, "${pkg.name}-$libName")
                 File(pkgDir, "build.gradle.kts").writeTextIfDifferent(
@@ -291,7 +311,7 @@ for (pkg in packages) {
                         debug = false,
                     ),
                 )
-                copyDynamicLib(pkgDir, libName)
+                copied.addAll(copyDynamicLib(pkgDir, libName, exclude = copied))
                 if (includeDebugBuilds) {
                     File(baseWrappersPath, "${pkg.name}-$libName--debug/build.gradle.kts").writeTextIfDifferent(
                         generateBuildGradle(

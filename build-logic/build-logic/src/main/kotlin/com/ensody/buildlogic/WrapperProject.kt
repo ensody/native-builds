@@ -56,6 +56,11 @@ setupBuildLogic {
         ${targets.joinToString("\n        ") { "${it.name}()" }}
         ${if (targets.any { it.jvmDynamicLib }) "jvm()" else ""}
         ${if (targets.any { it.androidAbi != null }) "androidTarget()" else ""}
+        ${if (targets.any { it.dynamicLib }) """
+        sourceSets["jvmCommonMain"].dependencies {
+            api(libs.nativebuilds.loader)
+        }
+        """ else ""}
 
         addCinterops(libProjectName = ${projectName.quote()}, libFileName = ${libName.quote()}, debug = $debug)
     }
