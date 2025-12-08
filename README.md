@@ -1,33 +1,33 @@
 # Native builds of C/C++ libraries for Kotlin Multiplatform
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/native-builds-gradle-plugin?label=native-builds-gradle-plugin&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/native-builds-gradle-plugin)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/native-builds-gradle-plugin?label=native-builds-gradle-plugin&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/native-builds-gradle-plugin)
 
 This project regularly builds the latest available vcpkg version of the following libraries:
 
-* **OpenSSL** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/openssl-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/openssl)
+* **OpenSSL** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/openssl-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/openssl-headers)
   * `com.ensody.nativebuilds:openssl-headers`: headers
   * `com.ensody.nativebuilds:openssl-libcrypto`: core crypto library
   * `com.ensody.nativebuilds:openssl-libssl`: TLS library (optional; depends on libcrypto)
-* **curl** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/curl-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/curl)
+* **curl** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/curl-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/curl-headers)
   * `com.ensody.nativebuilds:curl-headers`: headers
   * `com.ensody.nativebuilds:curl-libcurl`: static library (depends on openssl, nghttp2, nghttp3, ngtcp2, zlib)
-* **nghttp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp2-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp2)
+* **nghttp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp2-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp2-headers)
   * `com.ensody.nativebuilds:nghttp2-headers`: headers
   * `com.ensody.nativebuilds:nghttp2-libnghttp2`: static library
-* **nghttp3** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp3-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp3)
+* **nghttp3** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nghttp3-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nghttp3-headers)
   * `com.ensody.nativebuilds:nghttp3-headers`: headers
   * `com.ensody.nativebuilds:nghttp3-libnghttp3`: static library
-* **ngtcp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/ngtcp2-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/ngtcp2)
+* **ngtcp2** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/ngtcp2-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/ngtcp2-headers)
   * `com.ensody.nativebuilds:ngtcp2-headers`: headers
   * `com.ensody.nativebuilds:ngtcp2-libngtcp2`: main static library
   * `com.ensody.nativebuilds:ngtcp2-libngtcp2_crypto_ossl`: OpenSSL helper library
-* **lz4** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4)
+* **lz4** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4-headers)
   * `com.ensody.nativebuilds:lz4-headers`: headers
   * `com.ensody.nativebuilds:lz4-libzl4`: static library
-* **zlib** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib)
+* **zlib** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zlib-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zlib-headers)
   * `com.ensody.nativebuilds:zlib-headers`: headers
   * `com.ensody.nativebuilds:zlib-libz`: static library
-* **zstd** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd-headers?label=&color=%2345cf00)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd)
+* **zstd** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/zstd-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/zstd-headers)
   * `com.ensody.nativebuilds:zstd-headers`: headers
   * `com.ensody.nativebuilds:zstd-libzstd`: static library
 
