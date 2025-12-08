@@ -16,6 +16,9 @@ val ignorePaths = mutableSetOf("build", "docs", "gradle", "src", "vcpkg", "vcpkg
 if (System.getenv("WITH_WRAPPERS") != "true") {
     ignorePaths.add("generated-kotlin-wrappers")
 }
+if (System.getenv("PUBLISHING") == "true" || System.getenv("WITH_WRAPPERS") == "true") {
+    ignorePaths.add("nativebuilds-loader")
+}
 fun autoDetectModules(root: File) {
     for (file in root.listFiles()) {
         if (file.name.startsWith(".") || file.name in ignorePaths) {
@@ -32,5 +35,4 @@ fun autoDetectModules(root: File) {
         }
     }
 }
-
 autoDetectModules(rootDir)
