@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
 import java.io.File
 import java.util.zip.ZipFile
 
-class NativeBuildsPlugin : Plugin<Project> {
+public class NativeBuildsPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         target.run {
             val nativeBuild = configurations.create("nativeBuild")
@@ -36,6 +36,7 @@ class NativeBuildsPlugin : Plugin<Project> {
                 }.artifacts
 
                 doLast {
+                    outputs.files.singleFile.deleteRecursively()
                     artifactsProvider.artifacts.forEach { artifact ->
                         val identifier = artifact.id as ModuleComponentArtifactIdentifier
                         val name = identifier.componentIdentifier.moduleIdentifier.name
@@ -67,7 +68,7 @@ class NativeBuildsPlugin : Plugin<Project> {
     }
 }
 
-fun KotlinMultiplatformExtension.cinterops(
+public fun KotlinMultiplatformExtension.cinterops(
     vararg artifacts: Provider<MinimalExternalModuleDependency>,
     includeHeadersPath: Boolean = true,
     block: DefaultCInteropSettings.() -> Unit,
@@ -83,7 +84,7 @@ fun KotlinMultiplatformExtension.cinterops(
     }
 }
 
-fun KotlinNativeCompilation.cinterops(
+public fun KotlinNativeCompilation.cinterops(
     vararg artifacts: Provider<MinimalExternalModuleDependency>,
     includeHeadersPath: Boolean = true,
     block: DefaultCInteropSettings.() -> Unit,
@@ -111,7 +112,7 @@ fun KotlinNativeCompilation.cinterops(
     }
 }
 
-fun Project.addJvmNativeBuilds(
+public fun Project.addJvmNativeBuilds(
     vararg artifacts: Provider<MinimalExternalModuleDependency>,
     targets: List<JvmNativeBuildTarget> = listOf(JvmNativeBuildTarget.Android, JvmNativeBuildTarget.Jvm),
 ) {
@@ -198,7 +199,7 @@ fun Project.addJvmNativeBuilds(
     }
 }
 
-enum class JvmNativeBuildTarget(val suffix: String) {
+public enum class JvmNativeBuildTarget(public val suffix: String) {
     Android("android"),
     Jvm("jvm"),
 }

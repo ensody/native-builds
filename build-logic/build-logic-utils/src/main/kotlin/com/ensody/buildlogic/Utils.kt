@@ -1,12 +1,14 @@
 package com.ensody.buildlogic
 
-import com.android.build.gradle.internal.cxx.io.writeTextIfDifferent
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.get
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributeView
+import java.nio.file.attribute.BasicFileAttributes
 
 val Project.isRootProject get() = this == rootProject
 
@@ -44,7 +46,23 @@ fun shell(
     env: Map<String, String> = emptyMap(),
     inheritIO: Boolean = false,
 ): String =
-    cli("/bin/bash", "-c", command, workingDir = workingDir, env = env, inheritIO = inheritIO)
+    cli("/bin/bash", "-l", "-c", command, workingDir = workingDir, env = env, inheritIO = inheritIO)
+
+fun File.writeTextIfDifferent(text: String) {
+    if (!exists() || readText() != text) {
+        parentFile.mkdirs()
+        writeText(text)
+    }
+}
+
+fun File.renameLeafName(name: String): Boolean =
+    exists() && renameTo(File(parentFile, name))
+
+fun File.setTimesFrom(other: File) {
+    val attrs = Files.readAttributes(other.toPath(), BasicFileAttributes::class.java)
+    Files.getFileAttributeView(toPath(), BasicFileAttributeView::class.java)
+        .setTimes(attrs.lastModifiedTime(), attrs.lastAccessTime(), attrs.creationTime())
+}
 
 fun Project.withGeneratedBuildFile(category: String, path: String, sourceSet: String? = null, content: () -> String) {
     val generatedDir = file("${getGeneratedBuildFilesRoot()}/$category")
@@ -60,12 +78,12 @@ fun Project.withGeneratedBuildFile(category: String, path: String, sourceSet: St
 
 fun Project.getDefaultPackageName(): String =
     group.toString().split(".").let { prefix ->
-        prefix + name.split(Regex("-+")).dropWhile { it == prefix.last() }
+        prefix + name.split("-").dropWhile { it == prefix.last() }
     }.joinToString(".")
 
-internal val generatedFiles = mutableMapOf<String, MutableSet<File>>()
+val generatedFiles = mutableMapOf<String, MutableSet<File>>()
 
-internal fun File.withParents(): List<File> =
+fun File.withParents(): List<File> =
     buildList {
         add(this@withParents)
         while (true) {
@@ -73,22 +91,20 @@ internal fun File.withParents(): List<File> =
         }
     }
 
-internal fun Project.getGeneratedBuildFilesRoot(): File =
+fun Project.getGeneratedBuildFilesRoot(): File =
     file("$projectDir/build/generated/source/build-logic")
 
-internal fun Project.detectProjectVersion(): String =
+fun Project.detectProjectVersion(): String =
     System.getenv("OVERRIDE_VERSION")?.removePrefix("v")?.removePrefix("-")?.takeIf { it.isNotBlank() }
         ?: cli("git", "tag", "--points-at", "HEAD").split("\n").filter {
             versionRegex.matchEntire(it) != null
         }.maxByOrNull {
             VersionComparable(versionRegex.matchEntire(it)!!.destructured.toList())
-        }?.removePrefix("v")?.removePrefix("-") ?: run {
+        }?.removePrefix("v")?.removePrefix("-")?.takeIf { System.getenv("RUNNING_ON_CI") == "true" }
+        ?: run {
             val branchName = cli("git", "rev-parse", "--abbrev-ref", "HEAD")
             "0.0.1-${sanitizeBranchName(branchName)}.1"
         }
-
-fun File.renameLeafName(name: String): Boolean =
-    exists() && renameTo(File(parentFile, name))
 
 enum class OS {
     Linux,
@@ -122,5 +138,5 @@ private class VersionComparable(val parts: List<String>) : Comparable<VersionCom
 private fun sanitizeBranchName(name: String): String =
     sanitizeRegex.replace(name, "-")
 
-private val versionRegex = Regex("""v-?(\d+)\.(\d+)\.(\d+)((-.+?\.)(\d+))*""")
+private val versionRegex = Regex("""v-?(\d+)\.(\d+)\.(\d+)(((?:-.+?)?\.)(\d+))*""")
 private val sanitizeRegex = Regex("""[^A-Za-z0-9\-]""")

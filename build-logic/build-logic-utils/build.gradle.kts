@@ -1,17 +1,10 @@
 plugins {
     `kotlin-dsl`
     id("java-gradle-plugin")
-    alias(libs.plugins.kotlinx.serialization)
 }
 
 dependencies {
-    api(project(":build-logic-android"))
-    api(project(":build-logic-compose"))
-    api(project(":build-logic-kmp"))
-    api(project(":build-logic-utils"))
-    api(libs.serialization.json)
-    api(libs.coroutines.core)
-    api(libs.ktor.client.okhttp)
+    api(rootLibs.gradle.kotlin)
 }
 
 val autoDetectPluginRegex = Regex("""^(?:public\s+)?class\s+(\w+)BuildLogicPlugin\s*:.*$""", RegexOption.MULTILINE)

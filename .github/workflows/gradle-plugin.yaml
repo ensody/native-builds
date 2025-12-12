@@ -39,10 +39,10 @@ jobs:
           ./gradlew help
           ./gradlew --version
       - name: Build project
-        run: ./gradlew build-logic:native-builds-gradle-plugin:assemble nativebuilds-loader:assemble --stacktrace
+        run: ./gradlew nativebuilds-gradle-plugin:assemble nativebuilds-loader:assemble --stacktrace
       - name: Publish package
         if: startsWith(github.ref, 'refs/tags/v-')
-        run: OVERRIDE_VERSION="$(git tag --points-at HEAD)" ./gradlew build-logic:native-builds-gradle-plugin:publishToMavenCentral nativebuilds-loader:publishToMavenCentral
+        run: OVERRIDE_VERSION="$(git tag --points-at HEAD)" ./gradlew publishToMavenCentral
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.PUBLICATION_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.PUBLICATION_PASSWORD }}

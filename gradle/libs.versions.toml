@@ -1,5 +1,6 @@
 [versions]
 kotlin = "2.2.0"
+kotlinForGradlePlugins = "1.9.0"
 coroutines = "1.10.2"
 
 [libraries]
@@ -14,6 +15,8 @@ kotlin-test-junit =  { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version = "1.7.1" }
 mockk = { module = "io.mockk:mockk", version = "1.14.5" }
 nativebuilds-loader = { module = "com.ensody.nativebuilds:nativebuilds-loader", version = "0.6.1" }
+
+serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.7.3" }
 
 gradle-android = { module = "com.android.tools.build:gradle", version = "8.12.0" }
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

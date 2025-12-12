@@ -18,6 +18,7 @@ if (System.getenv("WITH_WRAPPERS") != "true") {
 }
 if (System.getenv("PUBLISHING") == "true" || System.getenv("WITH_WRAPPERS") == "true") {
     ignorePaths.add("nativebuilds-loader")
+    ignorePaths.add("nativebuilds-gradle-plugin")
 }
 fun autoDetectModules(root: File) {
     for (file in root.listFiles()) {

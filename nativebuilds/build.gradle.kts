@@ -12,11 +12,15 @@ import com.ensody.buildlogic.json
 import com.ensody.buildlogic.loadBuildPackages
 import com.ensody.buildlogic.registerZipTask
 import com.ensody.buildlogic.renameLeafName
+import com.ensody.buildlogic.setTimesFrom
 import com.ensody.buildlogic.setupBuildLogic
 import io.ktor.http.quote
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributeView
+import java.nio.file.attribute.BasicFileAttributes
 
 plugins {
     id("com.ensody.build-logic.base")
@@ -59,12 +63,14 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
             val destination = File(overlayTriplets, file.name)
             file.copyTo(destination)
             destination.appendText("\nset(VCPKG_BUILD_TYPE release)\n")
+            destination.setTimesFrom(file)
 
             if (target.dynamicLib) {
                 val libFile = baseTriplets.first { it.nameWithoutExtension == target.baseDynamicTriplet }
                 val dynamic = File(overlayTriplets, "${target.dynamicTriplet}.cmake")
                 libFile.copyTo(dynamic)
                 dynamic.appendText("\nset(VCPKG_CRT_LINKAGE dynamic)\nset(VCPKG_LIBRARY_LINKAGE dynamic)\n")
+                dynamic.setTimesFrom(libFile)
             }
         }
     }

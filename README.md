@@ -1,6 +1,6 @@
 # Native builds of C/C++ libraries for Kotlin Multiplatform
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/native-builds-gradle-plugin?label=native-builds-gradle-plugin&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/native-builds-gradle-plugin)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/nativebuilds-gradle-plugin?label=nativebuilds-gradle-plugin&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/nativebuilds-gradle-plugin)
 
 This project regularly builds the latest available vcpkg version of the following libraries:
 
