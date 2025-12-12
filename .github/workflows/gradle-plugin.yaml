@@ -39,7 +39,7 @@ jobs:
           ./gradlew help
           ./gradlew --version
       - name: Build project
-        run: ./gradlew nativebuilds-gradle-plugin:assemble nativebuilds-loader:assemble --stacktrace
+        run: ./gradlew assemble --stacktrace
       - name: Publish package
         if: startsWith(github.ref, 'refs/tags/v-')
         run: OVERRIDE_VERSION="$(git tag --points-at HEAD)" ./gradlew publishToMavenCentral

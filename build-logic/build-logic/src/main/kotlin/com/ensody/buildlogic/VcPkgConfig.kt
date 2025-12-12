@@ -109,7 +109,7 @@ data class BuildPackage(
 
     fun isPublished(target: BuildTarget?): Boolean =
         runBlocking {
-            val targetName = target?.let { "$name-${it.name}" } ?: name
+            val targetName = target?.let { "$name-${it.name}" } ?: "$name-headers"
             val groupPath = GroupId.replace(".", "/")
             client.get("https://repo1.maven.org/maven2/$groupPath/$targetName/$version/$targetName-$version.pom")
                 .status.value == 200
