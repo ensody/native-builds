@@ -59,8 +59,8 @@ Add the dependencies, based on the Maven modules mentioned above, to your `gradl
 ```toml
 [versions]
 # Note: these might not be the latest version numbers. Please check the version badges above.
-openssl = "3.6.0"
-nativebuilds = "0.4.0"
+openssl = "3.6.0.4"
+nativebuilds = "0.7.0"
 
 [libraries]
 # KMP wrapper module for libcrypto.a
@@ -125,6 +125,53 @@ kotlin.mpp.enableCInteropCommonization=true
 ```
 
 After the Gradle sync you can import the OpenSSL APIs within nativeMain (or iosMain etc.).
+
+## JNI: JVM and Android
+
+On the JVM and on Android you can integrate the pre-built shared libraries for all desktop and Android targets by adding this to your build.gradle.kts:
+
+```kotlin
+addJvmNativeBuilds(libs.nativebuilds.openssl.libcrypto)
+```
+
+You'll also have to implement JNI wrappers in C/C++ and Kotlin and integrate the C/C++ code with the build as described in the next subsections. You can use the [Kompressor](https://github.com/ensody/Kompressor) project as a reference for how to do that.
+
+### JNI: Android
+
+For Android you'll also need to integrate your CMakeLists.txt:
+
+```kotlin
+android {
+    externalNativeBuild {
+        cmake {
+            path = file("src/androidMain/CMakeLists.txt")
+        }
+    }
+}
+```
+
+The CMakeLists.txt can utilize a pre-generated CMake helper:
+
+```cmake
+# Define a variable for the generated CMake helper's path
+set(NATIVEBUILDS_CMAKE_DIR "${PROJECT_SOURCE_DIR}/../../build/nativebuilds-cmake")
+
+# Include the CMake helper.
+# This automatically includes the headers for openssl-libcrypto and makes the shared library accessible.
+include("${NATIVEBUILDS_CMAKE_DIR}/openssl-libcrypto-android.cmake")
+
+# Link against the shared library
+target_link_libraries(myproject openssl-libcrypto)
+```
+
+### JNI: JVM
+
+On the JVM you currently need to invest a little bit more effort for your JNI wrapper. One possibility is to use Zig to cross-compile for all desktop targets.
+
+Again, take a look at the [Kompressor](https://github.com/ensody/Kompressor) project:
+
+* `assembleZigJni` in [build.gradle.kts](https://github.com/ensody/Kompressor/blob/main/kompressor-zstd--nativelib/build.gradle.kts)
+* [build.zig](https://github.com/ensody/Kompressor/blob/main/kompressor-zstd--nativelib/src/jvmMain/build.zig)
 
 ## Android unit tests
 
