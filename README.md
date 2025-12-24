@@ -21,6 +21,11 @@ This project regularly builds the latest available vcpkg version of the followin
   * `com.ensody.nativebuilds:ngtcp2-headers`: headers
   * `com.ensody.nativebuilds:ngtcp2-libngtcp2`: main static library
   * `com.ensody.nativebuilds:ngtcp2-libngtcp2_crypto_ossl`: OpenSSL helper library
+* **brotli** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/brotli-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/brotli-headers)
+  * `com.ensody.nativebuilds:brotli-headers`: headers
+  * `com.ensody.nativebuilds:brotli-libbrotlicommon`: common static library
+  * `com.ensody.nativebuilds:brotli-libbrotlidec`: decompression static library (depends on libbrotlicommon)
+  * `com.ensody.nativebuilds:brotli-libbrotlienc`: compression static library (depends on libbrotlicommon)
 * **lz4** [![Maven Central](https://img.shields.io/maven-central/v/com.ensody.nativebuilds/lz4-headers?label=&color=%2345cf00&filter=!*-*)](https://central.sonatype.com/artifact/com.ensody.nativebuilds/lz4-headers)
   * `com.ensody.nativebuilds:lz4-headers`: headers
   * `com.ensody.nativebuilds:lz4-libzl4`: static library
