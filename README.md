@@ -126,6 +126,18 @@ kotlin.mpp.enableCInteropCommonization=true
 
 After the Gradle sync you can import the OpenSSL APIs within nativeMain (or iosMain etc.).
 
+## Android unit tests
+
+The NativeBuilds Gradle plugin provides a helper function for Android unit tests which substitutes all Android JNI dependencies with their JVM counterpart. Without that rule, Android unit tests with JNI dependencies would fail because the tests run directly on the host instead of an Android emulator - while the JNI dependencies are usually only built for Android only instead of for the host.
+
+This substitution helper only changes the Android unit tests. The main Android source-set stays untouched. Add this to your build.gradle.kts or build-logic module:
+
+```kotlin
+substituteAndroidNativeLibsInUnitTests()
+```
+
+If you want to customize the rule, you can use the code in [AndroidSubstitutionRule.kt](https://github.com/ensody/native-builds/blob/main/nativebuilds-gradle-plugin/src/main/kotlin/com/ensody/nativebuilds/AndroidSubstitutionRule.kt) as a starting point.
+
 ## Local testing
 
 ```shell
