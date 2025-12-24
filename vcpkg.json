@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "dependencies": [
     {
+      "name": "brotli"
+    },
+    {
       "name": "curl",
       "default-features": false,
       "features": [
