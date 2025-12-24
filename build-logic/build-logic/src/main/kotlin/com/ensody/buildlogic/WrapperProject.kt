@@ -45,7 +45,8 @@ import com.ensody.buildlogic.setupBuildLogic
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 
 plugins {
-    id("${if (targets.any { it.androidAbi != null }) "com.ensody.build-logic.kmp" else "org.jetbrains.kotlin.multiplatform"}")
+    ${if (targets.any { it.androidAbi != null }) "id(\"com.ensody.build-logic.android\")" else ""}
+    id("com.ensody.build-logic.kmp")
     id("com.ensody.build-logic.publish")
 }
 
