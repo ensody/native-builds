@@ -103,7 +103,7 @@ public fun KotlinNativeCompilation.cinterops(
     }
     cinterops {
         create(name) {
-            val basePath = "nativebuilds/$name-${target.name}"
+            val basePath = "nativebuilds/$name-${target.name.lowercase()}"
             if (includeHeadersPath) {
                 includeDirs(project.layout.buildDirectory.dir("$basePath/include"))
             }
