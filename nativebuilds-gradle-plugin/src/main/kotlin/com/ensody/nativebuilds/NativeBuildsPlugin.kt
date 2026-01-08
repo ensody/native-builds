@@ -139,7 +139,7 @@ public fun Project.addJvmNativeBuilds(
                     val lib = metadata.getValue("lib").jsonPrimitive.content
                     val cmakeHeader = """
                     project(${rawArtifact.module.name})
-                    set(NATIVEBUILDS_DIR "${nativeBuildsPath.absolutePath}")
+                    set(NATIVEBUILDS_DIR ${nativeBuildsPath.absolutePath.quoted()})
                     add_library(${rawArtifact.module.name} SHARED IMPORTED)
                     """.trimIndent()
                     val cmakeRule = when (target) {
