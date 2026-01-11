@@ -7,16 +7,17 @@ import com.ensody.buildlogic.GroupId
 import com.ensody.buildlogic.OS
 import com.ensody.buildlogic.cli
 import com.ensody.buildlogic.generateBuildGradle
-import com.ensody.buildlogic.isOnArm64
 import com.ensody.buildlogic.json
 import com.ensody.buildlogic.loadBuildPackages
 import com.ensody.buildlogic.registerZipTask
 import com.ensody.buildlogic.renameLeafName
 import com.ensody.buildlogic.setupBuildLogic
 import io.ktor.http.quote
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.jetbrains.kotlin.konan.target.Distribution
+import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.konan.util.DependencyDirectories as KonanDependencyDirectories
 
 plugins {
     id("com.ensody.build-logic.base")
@@ -25,15 +26,30 @@ plugins {
 
 setupBuildLogic {}
 
+// This is used to publish a new version in case the build script has changed fundamentally
+val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
+    "curl" to mapOf("8.17.0" to ".4"),
+    "lz4" to mapOf("1.10.0" to ".4"),
+    "nghttp2" to mapOf("1.68.0" to ".4"),
+    "nghttp3" to mapOf("1.13.1" to ".4"),
+    "ngtcp2" to mapOf("1.18.0" to ".4"),
+    "openssl" to mapOf("3.6.0" to ".6"),
+    "zlib" to mapOf("1.3.1" to ".4"),
+    "zstd" to mapOf("1.5.7" to ".4"),
+)
+
 // TODO: Debug builds will have to be done via overlays. They're not fully supported yet.
 val includeDebugBuilds = System.getenv("INCLUDE_DEBUG_BUILDS") == "true"
 val isPublishing = System.getenv("PUBLISHING") == "true"
 
 val nativeBuildPath = layout.buildDirectory.dir("nativebuilds").get().asFile
 val overlayTriplets = layout.buildDirectory.dir("nativebuilds-triplets").get().asFile
+val overlayToolchains = layout.buildDirectory.dir("nativebuilds-toolchains").get().asFile
 val wrappersPath = File("$rootDir/generated-kotlin-wrappers")
 val initBuildTask = tasks.register("cleanNativeBuild") {
-    doFirst {
+    dependsOn(project(":kotlin-native-setup").tasks.named("assemble"))
+
+    doLast {
         nativeBuildPath.deleteRecursively()
         if (!isPublishing) {
             wrappersPath.deleteRecursively()
@@ -50,37 +66,68 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
 
         overlayTriplets.deleteRecursively()
         overlayTriplets.mkdirs()
+
+        overlayToolchains.deleteRecursively()
+        overlayToolchains.mkdirs()
+
         val communityTriplets = File("$rootDir/vcpkg/triplets/community")
         val baseTriplets = (communityTriplets.listFiles()!! + communityTriplets.parentFile.listFiles()!!).filter {
             it.isFile && it.extension == "cmake"
         }
-        for (target in BuildTarget.values()) {
+        for (target in BuildTarget.entries) {
             val file = baseTriplets.first { it.nameWithoutExtension == target.triplet }
             val destination = File(overlayTriplets, file.name)
             file.copyTo(destination)
             destination.appendText("\nset(VCPKG_BUILD_TYPE release)\n")
+
+            // Kotlin Native uses its own toolchain. For example, on Linux it uses its own glibc version.
+            // If vcpkg compiles against the host system glibc this might make the resulting static/shared lib depend on
+            // symbols that are only available on more recent glibc versions. This causes two problems:
+            // 1. Any consumer of that static/shared lib would fail building with Kotlin Native.
+            // 2. The minimum supported glibc versions might be too new for most real-world Linux machines.
+            // So, in order to ensure compatibility, we reconfigure vcpkg to use Kotlin Native's own Linux toolchain.
+            val sourceToolchain = target.sourceToolchain?.let { file("toolchains/$it") }
+            val toolchainSetup = if (sourceToolchain == null) {
+                ""
+            } else {
+                val konanDataDir = System.getenv("KONAN_DATA_DIR")?.takeIf { it.isNotBlank() }
+                val distribution = Distribution(
+                    konanHome = project(":kotlin-native-setup").properties["konanHome"] as String,
+                    konanDataDir = konanDataDir,
+                )
+                val konanTarget = target.konanTarget!!
+                val toolchainName = distribution.properties.getProperty("toolchainDependency.${konanTarget.name}")
+                val toolchainDirectory = File(KonanDependencyDirectories.getDependenciesRoot(konanDataDir), toolchainName)
+                val env = mutableMapOf<String, String>(
+                    "VCPKG_ROOT" to File(rootDir, "vcpkg").absolutePath,
+                    "TOOLCHAIN_DIR" to toolchainDirectory.absolutePath,
+                )
+                if (konanTarget.family == Family.LINUX) {
+                    env["TOOLCHAIN_TARGET"] = distribution.properties.getProperty("targetTriple.${konanTarget.name}")
+                }
+
+                val destinationToolchain = File(overlayToolchains, "${konanTarget.name}.cmake")
+                var toolchainCode = sourceToolchain.readText()
+                // Workaround for Windows having problems with $ENV{...} access.
+                // Resolve envs statically and create per-target toolchain files for Linux and Windows.
+                for ((key, value) in env) {
+                    toolchainCode = toolchainCode.replace($$"$ENV{$$key}", value.quote().drop(1).dropLast(1))
+                }
+                destinationToolchain.writeText(toolchainCode)
+                "\nset(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${destinationToolchain.absolutePath.quote()})\n"
+            }
+            destination.appendText(toolchainSetup)
 
             if (target.dynamicLib) {
                 val libFile = baseTriplets.first { it.nameWithoutExtension == target.baseDynamicTriplet }
                 val dynamic = File(overlayTriplets, "${target.dynamicTriplet}.cmake")
                 libFile.copyTo(dynamic)
                 dynamic.appendText("\nset(VCPKG_CRT_LINKAGE dynamic)\nset(VCPKG_LIBRARY_LINKAGE dynamic)\n")
+                dynamic.appendText(toolchainSetup)
             }
         }
     }
 }
-
-// This is used to publish a new version in case the build script has changed fundamentally
-val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    "curl" to mapOf("8.17.0" to ".4"),
-    "lz4" to mapOf("1.10.0" to ".4"),
-    "nghttp2" to mapOf("1.68.0" to ".4"),
-    "nghttp3" to mapOf("1.13.1" to ".4"),
-    "ngtcp2" to mapOf("1.18.0" to ".4"),
-    "openssl" to mapOf("3.6.0" to ".5"),
-    "zlib" to mapOf("1.3.1" to ".4"),
-    "zstd" to mapOf("1.5.7" to ".4"),
-)
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
     rebuildVersionWithSuffix[pkg.name]?.get(pkg.version)?.let { pkg.copy(version = pkg.version + it) } ?: pkg
@@ -92,45 +139,39 @@ val splitId = System.getenv("BUILD_SPLIT_ID")?.takeIf { it.isNotBlank() }?.toInt
 val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(",")?.map {
     BuildTarget.valueOf(it)
 }?.distinct()
-    ?: when (OS.current) {
-        OS.macOS -> listOf(
+    ?: BuildTarget.entries.mapNotNull { target ->
+        val os = when (target) {
             BuildTarget.iosArm64,
             BuildTarget.iosSimulatorArm64,
             BuildTarget.iosX64,
-
             BuildTarget.tvosArm64,
             BuildTarget.tvosSimulatorArm64,
             BuildTarget.tvosX64,
-
-            BuildTarget.watchosArm32,
             BuildTarget.watchosDeviceArm64,
             BuildTarget.watchosArm64,
+            BuildTarget.watchosArm32,
             BuildTarget.watchosSimulatorArm64,
             BuildTarget.watchosX64,
-
             BuildTarget.macosArm64,
             BuildTarget.macosX64,
-        )
+            -> OS.macOS
 
-        OS.Linux -> if (isOnArm64) {
-            listOf(
-                BuildTarget.linuxArm64,
-            )
-        } else {
-            listOf(
-                BuildTarget.linuxX64,
+            BuildTarget.linuxArm64,
+            BuildTarget.linuxX64,
+            BuildTarget.androidNativeArm64,
+            BuildTarget.androidNativeArm32,
+            BuildTarget.androidNativeX64,
+            BuildTarget.androidNativeX86,
+            -> OS.Linux
 
-                BuildTarget.androidNativeArm64,
-                BuildTarget.androidNativeArm32,
-                BuildTarget.androidNativeX64,
-                BuildTarget.androidNativeX86,
-            )
-        }
-
-        OS.Windows -> listOf(
             BuildTarget.mingwX64,
-//            BuildTarget.windowsX64,
-        )
+            -> OS.Windows
+
+            BuildTarget.windowsX64,
+            BuildTarget.wasm32,
+            -> null
+        }
+        target.takeIf { OS.current == os }
     }.run {
         val chunkSize = size / splits
         slice(chunkSize * splitId until if (splitId >= splits - 1) size else chunkSize * (splitId + 1))
@@ -157,7 +198,7 @@ for (target in targets) {
                     "--triplet",
                     triplet,
                     "--x-packages-root",
-                    "$baseNativeBuildPath/${target.name}",
+                    File(baseNativeBuildPath, target.name).absolutePath,
                     inheritIO = true,
                 )
                 for (pkg in packages) {
@@ -286,9 +327,11 @@ for (pkg in packages) {
                 public object $className : NativeBuildsJvmLib {
                     override val packageName: String = ${pkg.name.quote()}
                     override val libName: String = ${libName.quote()}
-                    override val platformFileName: Map<String, String> = mapOf(${targetsMap.entries.joinToString { (k, v) ->
-                        "${k.quote()} to ${v.quote()}"
-                    }})
+                    override val platformFileName: Map<String, String> = mapOf(${
+                        targetsMap.entries.joinToString { (k, v) ->
+                            "${k.quote()} to ${v.quote()}"
+                        }
+                    })
                 }
                 """.trimIndent().trim() + "\n",
                 )

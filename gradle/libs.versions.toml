@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.2.0"
+kotlin = "2.2.21"
 kotlinForGradlePlugins = "1.9.0"
 coroutines = "1.10.2"
 
@@ -14,16 +14,14 @@ kotlin-test-main =  { module = "org.jetbrains.kotlin:kotlin-test" }
 kotlin-test-junit =  { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version = "1.7.1" }
 mockk = { module = "io.mockk:mockk", version = "1.14.5" }
-nativebuilds-loader = { module = "com.ensody.nativebuilds:nativebuilds-loader", version = "0.6.1" }
+nativebuilds-loader = { module = "com.ensody.nativebuilds:nativebuilds-loader", version = "0.7.2" }
 
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.7.3" }
 
-gradle-android = { module = "com.android.tools.build:gradle", version = "8.12.0" }
+gradle-android = { module = "com.android.tools.build:gradle", version = "8.13.2" }
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradle-cocoapods = { module = "org.jetbrains.kotlin.native.cocoapods:org.jetbrains.kotlin.native.cocoapods.gradle.plugin", version.ref = "kotlin" }
 gradle-dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version = "2.0.0" }
 gradle-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version = "1.23.8" }
-gradle-kotlin-compose = { module = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin", version.ref = "kotlin" }
-gradle-jetbrains-compose = { module = "org.jetbrains.compose:org.jetbrains.compose.gradle.plugin", version = "1.8.2" }
 gradle-kotlin-jvm = { module = "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin", version.ref = "kotlin" }
-gradle-maven-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version = "0.34.0" }
+gradle-maven-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version = "0.35.0" }
