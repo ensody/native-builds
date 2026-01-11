@@ -19,6 +19,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonNames
 import kotlinx.serialization.json.JsonPrimitive
+import org.jetbrains.kotlin.konan.target.KonanTarget
 import java.io.File
 
 val GroupId = "com.ensody.nativebuilds"
@@ -141,45 +142,46 @@ enum class License(val id: String, val longName: String, val url: String) {
     }
 }
 
-private val arch = System.getProperty("os.arch")
-val isOnArm64 = "aarch64" in arch || "arm64" in arch
-
 enum class BuildTarget(
     val triplet: String,
+    val konanTarget: KonanTarget?,
     val baseDynamicTriplet: String = triplet,
     val dynamicTriplet: String = baseDynamicTriplet.removeSuffix("-dynamic") + "-dynamic",
+    val sourceToolchain: String? = null,
     val androidAbi: String? = null,
     val jvmDynamicLib: Boolean = false,
 ) {
-    iosArm64("arm64-ios"),
-    iosSimulatorArm64("arm64-ios-simulator"),
-    iosX64("x64-ios"),
+    iosArm64("arm64-ios", KonanTarget.IOS_ARM64),
+    iosSimulatorArm64("arm64-ios-simulator", KonanTarget.IOS_SIMULATOR_ARM64),
+    iosX64("x64-ios", KonanTarget.IOS_X64),
 
-    watchosDeviceArm64("arm64-watchos"),
-    watchosArm64("arm6432-watchos"),
-    watchosArm32("arm-watchos"),
-    watchosSimulatorArm64("arm64-watchos-simulator"),
-    watchosX64("x64-watchos-simulator"),
+    watchosDeviceArm64("arm64-watchos", KonanTarget.WATCHOS_DEVICE_ARM64),
+    watchosArm64("arm6432-watchos", KonanTarget.WATCHOS_ARM64),
+    watchosArm32("arm-watchos", KonanTarget.WATCHOS_ARM32),
+    watchosSimulatorArm64("arm64-watchos-simulator", KonanTarget.WATCHOS_SIMULATOR_ARM64),
+    watchosX64("x64-watchos-simulator", KonanTarget.WATCHOS_X64),
 
-    tvosArm64("arm64-tvos"),
-    tvosSimulatorArm64("arm64-tvos-simulator"),
-    tvosX64("x64-tvos-simulator"),
+    tvosArm64("arm64-tvos", KonanTarget.TVOS_ARM64),
+    tvosSimulatorArm64("arm64-tvos-simulator", KonanTarget.TVOS_SIMULATOR_ARM64),
+    tvosX64("x64-tvos-simulator", KonanTarget.TVOS_X64),
 
-    androidNativeArm64("arm64-android", androidAbi = "arm64-v8a"),
-    androidNativeArm32("arm-neon-android", androidAbi = "armeabi-v7a"),
-    androidNativeX64("x64-android", androidAbi = "x86_64"),
-    androidNativeX86("x86-android", androidAbi = "x86"),
+    androidNativeArm64("arm64-android", KonanTarget.ANDROID_ARM64, androidAbi = "arm64-v8a"),
+    androidNativeArm32("arm-neon-android", KonanTarget.ANDROID_ARM32, androidAbi = "armeabi-v7a"),
+    androidNativeX64("x64-android", KonanTarget.ANDROID_X64, androidAbi = "x86_64"),
+    androidNativeX86("x86-android", KonanTarget.ANDROID_X86, androidAbi = "x86"),
 
-    macosArm64("arm64-osx", jvmDynamicLib = true),
-    macosX64("x64-osx", jvmDynamicLib = true),
+    macosArm64("arm64-osx", KonanTarget.MACOS_ARM64, jvmDynamicLib = true),
+    macosX64("x64-osx", KonanTarget.MACOS_X64, jvmDynamicLib = true),
 
-    linuxArm64("arm64-linux", jvmDynamicLib = true),
-    linuxX64("x64-linux", jvmDynamicLib = true),
+    linuxArm64("arm64-linux", KonanTarget.LINUX_ARM64, sourceToolchain = "linux.cmake", jvmDynamicLib = true),
+    linuxX64("x64-linux", KonanTarget.LINUX_X64, sourceToolchain = "linux.cmake", jvmDynamicLib = true),
 
-    mingwX64("x64-mingw-static", dynamicTriplet = "x64-mingw-dynamic", jvmDynamicLib = true),
-    windowsX64("x64-windows-static", jvmDynamicLib = true),
+    // TODO: The Kotlin 2.2.21 toolchain uses GCC (msys2-mingw-w64-x86_64-2) instead of LLVM and segfaults during the
+    //  Brotli compilation. Try again with more recent Kotlin releases: sourceToolchain = "mingw.cmake"
+    mingwX64("x64-mingw-static", KonanTarget.MINGW_X64, dynamicTriplet = "x64-mingw-dynamic", jvmDynamicLib = true),
+    windowsX64("x64-windows-static", null, jvmDynamicLib = true),
 
-    wasm32("wasm32-emscripten"),
+    wasm32("wasm32-emscripten", null),
     ;
 
     val dynamicLib: Boolean = androidAbi != null || jvmDynamicLib
