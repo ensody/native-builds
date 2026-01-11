@@ -84,7 +84,7 @@ jobs:
 
   linux-x64:
     name: Build on Linux x64
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         split: [0, 1]
@@ -166,7 +166,7 @@ jobs:
 
   linux-aarch64:
     name: Build on Linux aarch64
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-22.04-arm
     strategy:
       matrix:
         split: [0]

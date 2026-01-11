@@ -12,15 +12,11 @@ import com.ensody.buildlogic.json
 import com.ensody.buildlogic.loadBuildPackages
 import com.ensody.buildlogic.registerZipTask
 import com.ensody.buildlogic.renameLeafName
-import com.ensody.buildlogic.setTimesFrom
 import com.ensody.buildlogic.setupBuildLogic
 import io.ktor.http.quote
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import java.nio.file.Files
-import java.nio.file.attribute.BasicFileAttributeView
-import java.nio.file.attribute.BasicFileAttributes
 
 plugins {
     id("com.ensody.build-logic.base")
@@ -63,14 +59,12 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
             val destination = File(overlayTriplets, file.name)
             file.copyTo(destination)
             destination.appendText("\nset(VCPKG_BUILD_TYPE release)\n")
-            destination.setTimesFrom(file)
 
             if (target.dynamicLib) {
                 val libFile = baseTriplets.first { it.nameWithoutExtension == target.baseDynamicTriplet }
                 val dynamic = File(overlayTriplets, "${target.dynamicTriplet}.cmake")
                 libFile.copyTo(dynamic)
                 dynamic.appendText("\nset(VCPKG_CRT_LINKAGE dynamic)\nset(VCPKG_LIBRARY_LINKAGE dynamic)\n")
-                dynamic.setTimesFrom(libFile)
             }
         }
     }
@@ -83,7 +77,7 @@ val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
     "nghttp2" to mapOf("1.68.0" to ".4"),
     "nghttp3" to mapOf("1.13.1" to ".4"),
     "ngtcp2" to mapOf("1.18.0" to ".4"),
-    "openssl" to mapOf("3.6.0" to ".4"),
+    "openssl" to mapOf("3.6.0" to ".5"),
     "zlib" to mapOf("1.3.1" to ".4"),
     "zstd" to mapOf("1.5.7" to ".4"),
 )

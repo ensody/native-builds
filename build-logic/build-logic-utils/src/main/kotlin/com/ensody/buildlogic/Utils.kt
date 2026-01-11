@@ -6,9 +6,6 @@ import org.gradle.kotlin.dsl.get
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.attribute.BasicFileAttributeView
-import java.nio.file.attribute.BasicFileAttributes
 
 val Project.isRootProject get() = this == rootProject
 
@@ -45,8 +42,14 @@ fun shell(
     workingDir: File? = null,
     env: Map<String, String> = emptyMap(),
     inheritIO: Boolean = false,
-): String =
-    cli("/bin/bash", "-l", "-c", command, workingDir = workingDir, env = env, inheritIO = inheritIO)
+): String {
+    val shellCommand = if (OS.current == OS.Windows) {
+        arrayOf("cmd.exe", "/c")
+    } else {
+        arrayOf("/bin/bash", "-c", "-l")
+    }
+    return cli(*shellCommand, command, workingDir = workingDir, env = env, inheritIO = inheritIO)
+}
 
 fun File.writeTextIfDifferent(text: String) {
     if (!exists() || readText() != text) {
@@ -57,12 +60,6 @@ fun File.writeTextIfDifferent(text: String) {
 
 fun File.renameLeafName(name: String): Boolean =
     exists() && renameTo(File(parentFile, name))
-
-fun File.setTimesFrom(other: File) {
-    val attrs = Files.readAttributes(other.toPath(), BasicFileAttributes::class.java)
-    Files.getFileAttributeView(toPath(), BasicFileAttributeView::class.java)
-        .setTimes(attrs.lastModifiedTime(), attrs.lastAccessTime(), attrs.creationTime())
-}
 
 fun Project.withGeneratedBuildFile(category: String, path: String, sourceSet: String? = null, content: () -> String) {
     val generatedDir = file("${getGeneratedBuildFilesRoot()}/$category")
@@ -78,7 +75,7 @@ fun Project.withGeneratedBuildFile(category: String, path: String, sourceSet: St
 
 fun Project.getDefaultPackageName(): String =
     group.toString().split(".").let { prefix ->
-        prefix + name.split("-").dropWhile { it == prefix.last() }
+        prefix + name.split("-").filter { it.isNotBlank() }.dropWhile { it == prefix.last() }
     }.joinToString(".")
 
 val generatedFiles = mutableMapOf<String, MutableSet<File>>()
@@ -96,14 +93,13 @@ fun Project.getGeneratedBuildFilesRoot(): File =
 
 fun Project.detectProjectVersion(): String =
     System.getenv("OVERRIDE_VERSION")?.removePrefix("v")?.removePrefix("-")?.takeIf { it.isNotBlank() }
-        ?: cli("git", "tag", "--points-at", "HEAD").split("\n").filter {
+        ?: runCatching { cli("git", "tag", "--points-at", "HEAD") }.getOrNull()?.split("\n")?.filter {
             versionRegex.matchEntire(it) != null
-        }.maxByOrNull {
+        }?.maxByOrNull {
             VersionComparable(versionRegex.matchEntire(it)!!.destructured.toList())
         }?.removePrefix("v")?.removePrefix("-")?.takeIf { System.getenv("RUNNING_ON_CI") == "true" }
         ?: run {
-            val branchName = cli("git", "rev-parse", "--abbrev-ref", "HEAD")
-            "0.0.1-${sanitizeBranchName(branchName)}.1"
+            "0.0.1-local.1"
         }
 
 enum class OS {
@@ -112,7 +108,7 @@ enum class OS {
     Windows,
     ;
 
-    companion object Companion {
+    companion object {
         val current: OS by lazy {
             val osName = System.getProperty("os.name").lowercase()
             when {
@@ -120,6 +116,22 @@ enum class OS {
                 "linux" in osName -> Linux
                 "windows" in osName -> Windows
                 else -> error("Unknown operating system: $osName")
+            }
+        }
+    }
+}
+
+enum class CpuArch {
+    aarch64,
+    x64,
+    ;
+
+    companion object {
+        val current: CpuArch by lazy {
+            when (val arch = System.getProperty("os.arch").lowercase()) {
+                "aarch64", "arm64" -> aarch64
+                "amd64", "x86-64" -> x64
+                else -> error("Unknown CPU architecture: $arch")
             }
         }
     }
