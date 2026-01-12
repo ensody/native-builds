@@ -28,15 +28,15 @@ setupBuildLogic {}
 
 // This is used to publish a new version in case the build script has changed fundamentally
 val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    "brotli" to mapOf("1.2.0" to "1"),
-    "curl" to mapOf("8.18.0" to "1"),
-    "lz4" to mapOf("1.10.0" to "5"),
-    "nghttp2" to mapOf("1.68.0" to "5"),
-    "nghttp3" to mapOf("1.14.0" to "1"),
-    "ngtcp2" to mapOf("1.19.0" to "1"),
-    "openssl" to mapOf("3.6.0" to "7"),
-    "zlib" to mapOf("1.3.1" to "5"),
-    "zstd" to mapOf("1.5.7" to "5"),
+    "brotli" to mapOf("1.2.0" to "2"),
+    "curl" to mapOf("8.18.0" to "2"),
+    "lz4" to mapOf("1.10.0" to ".6"),
+    "nghttp2" to mapOf("1.68.0" to ".6"),
+    "nghttp3" to mapOf("1.14.0" to "2"),
+    "ngtcp2" to mapOf("1.19.0" to "2"),
+    "openssl" to mapOf("3.6.0" to ".8"),
+    "zlib" to mapOf("1.3.1" to ".6"),
+    "zstd" to mapOf("1.5.7" to ".6"),
 )
 
 // TODO: Debug builds will have to be done via overlays. They're not fully supported yet.
