@@ -28,14 +28,15 @@ setupBuildLogic {}
 
 // This is used to publish a new version in case the build script has changed fundamentally
 val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    "curl" to mapOf("8.17.0" to ".4"),
-    "lz4" to mapOf("1.10.0" to ".4"),
-    "nghttp2" to mapOf("1.68.0" to ".4"),
-    "nghttp3" to mapOf("1.13.1" to ".4"),
-    "ngtcp2" to mapOf("1.18.0" to ".4"),
-    "openssl" to mapOf("3.6.0" to ".6"),
-    "zlib" to mapOf("1.3.1" to ".4"),
-    "zstd" to mapOf("1.5.7" to ".4"),
+    "brotli" to mapOf("1.2.0" to "1"),
+    "curl" to mapOf("8.18.0" to "1"),
+    "lz4" to mapOf("1.10.0" to "5"),
+    "nghttp2" to mapOf("1.68.0" to "5"),
+    "nghttp3" to mapOf("1.14.0" to "1"),
+    "ngtcp2" to mapOf("1.19.0" to "1"),
+    "openssl" to mapOf("3.6.0" to "7"),
+    "zlib" to mapOf("1.3.1" to "5"),
+    "zstd" to mapOf("1.5.7" to "5"),
 )
 
 // TODO: Debug builds will have to be done via overlays. They're not fully supported yet.
@@ -96,7 +97,12 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
                     konanDataDir = konanDataDir,
                 )
                 val konanTarget = target.konanTarget!!
-                val toolchainName = distribution.properties.getProperty("toolchainDependency.${konanTarget.name}")
+                val toolchainKey = if (konanTarget.family == Family.LINUX) {
+                    "toolchainDependency.${konanTarget.name}"
+                } else {
+                    "llvm.${konanTarget.name}.user"
+                }
+                val toolchainName = distribution.properties.getProperty(toolchainKey)
                 val toolchainDirectory = File(KonanDependencyDirectories.getDependenciesRoot(konanDataDir), toolchainName)
                 val env = mutableMapOf<String, String>(
                     "VCPKG_ROOT" to File(rootDir, "vcpkg").absolutePath,
@@ -130,7 +136,7 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
 }
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
-    rebuildVersionWithSuffix[pkg.name]?.get(pkg.version)?.let { pkg.copy(version = pkg.version + it) } ?: pkg
+    rebuildVersionWithSuffix[pkg.name]?.get(pkg.version)?.let { pkg.copy(version = "${pkg.version}_$it") } ?: pkg
 }
 println(packages.joinToString("\n") { "$it" })
 

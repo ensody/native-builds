@@ -176,9 +176,7 @@ enum class BuildTarget(
     linuxArm64("arm64-linux", KonanTarget.LINUX_ARM64, sourceToolchain = "linux.cmake", jvmDynamicLib = true),
     linuxX64("x64-linux", KonanTarget.LINUX_X64, sourceToolchain = "linux.cmake", jvmDynamicLib = true),
 
-    // TODO: The Kotlin 2.2.21 toolchain uses GCC (msys2-mingw-w64-x86_64-2) instead of LLVM and segfaults during the
-    //  Brotli compilation. Try again with more recent Kotlin releases: sourceToolchain = "mingw.cmake"
-    mingwX64("x64-mingw-static", KonanTarget.MINGW_X64, dynamicTriplet = "x64-mingw-dynamic", jvmDynamicLib = true),
+    mingwX64("x64-mingw-static", KonanTarget.MINGW_X64, dynamicTriplet = "x64-mingw-dynamic", sourceToolchain = "mingw.cmake", jvmDynamicLib = true),
     windowsX64("x64-windows-static", null, jvmDynamicLib = true),
 
     wasm32("wasm32-emscripten", null),
