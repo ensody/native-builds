@@ -1,9 +1,17 @@
 package com.ensody.nativebuilds.loader
 
 import java.io.File
+import kotlin.uuid.Uuid
 
 public object NativeBuildsJvmLoader {
     private val loadedLibs = mutableSetOf<NativeBuildsJvmLib>()
+    private val tempDir by lazy {
+        File.createTempFile(Uuid.random().toHexString(), null).apply {
+            delete()
+            mkdir()
+            deleteOnExit()
+        }
+    }
 
     public fun load(lib: NativeBuildsJvmLib) {
         synchronized(lib) {
@@ -29,7 +37,7 @@ public object NativeBuildsJvmLoader {
                 val libFileName = lib.platformFileName[platform]
                     ?: error("Could not find library ${lib.libName} for platform $platform")
                 val path = "/jni/$platform/$libFileName"
-                val tempFile = File.createTempFile(libFileName, null).apply {
+                val tempFile = File(tempDir, libFileName).apply {
                     deleteOnExit()
                 }
 
@@ -38,7 +46,7 @@ public object NativeBuildsJvmLoader {
                 }
                 resource.use { inputStream ->
                     tempFile.outputStream().use {
-                        inputStream.transferTo(it)
+                        inputStream.copyTo(it)
                     }
                 }
 
