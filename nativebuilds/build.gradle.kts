@@ -103,7 +103,8 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
                     "llvm.${konanTarget.name}.user"
                 }
                 val toolchainName = distribution.properties.getProperty(toolchainKey)
-                val toolchainDirectory = File(KonanDependencyDirectories.getDependenciesRoot(konanDataDir), toolchainName)
+                val toolchainDirectory =
+                    File(KonanDependencyDirectories.getDependenciesRoot(konanDataDir), toolchainName)
                 val env = mutableMapOf<String, String>(
                     "VCPKG_ROOT" to File(rootDir, "vcpkg").absolutePath,
                     "TOOLCHAIN_DIR" to toolchainDirectory.absolutePath,
@@ -136,7 +137,10 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
 }
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
-    rebuildVersionWithSuffix[pkg.name]?.get(pkg.version)?.let { pkg.copy(version = "${pkg.version}_$it") } ?: pkg
+    rebuildVersionWithSuffix[pkg.name]?.get(pkg.version)?.let {
+        val separator = if (it[0].isDigit()) "_" else ""
+        pkg.copy(version = "${pkg.version}$separator$it")
+    } ?: pkg
 }
 println(packages.joinToString("\n") { "$it" })
 
