@@ -22,8 +22,8 @@ public object NativeBuildsJvmLoader {
                     loadedLibs.add(lib)
                     return
                 }
-                val osName = System.getProperty("os.name").lowercase()
-                val osArch = when (val osArch = System.getProperty("os.arch").lowercase()) {
+                val osName = System.getProperty("os.name")!!.lowercase()
+                val osArch = when (val osArch = System.getProperty("os.arch")!!.lowercase()) {
                     "x86_64", "amd64" -> "X64"
                     "aarch64", "arm64" -> "Arm64"
                     else -> error("Unsupported arch: $osArch (os=$osName)")

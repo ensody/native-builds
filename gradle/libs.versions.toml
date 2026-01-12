@@ -14,7 +14,7 @@ kotlin-test-main =  { module = "org.jetbrains.kotlin:kotlin-test" }
 kotlin-test-junit =  { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version = "1.7.1" }
 mockk = { module = "io.mockk:mockk", version = "1.14.5" }
-nativebuilds-loader = { module = "com.ensody.nativebuilds:nativebuilds-loader", version = "0.7.2" }
+nativebuilds-loader = { module = "com.ensody.nativebuilds:nativebuilds-loader", version = "0.7.3" }
 
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.7.3" }
 
