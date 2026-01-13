@@ -209,6 +209,32 @@ enum class BuildTarget(
             windowsX64 -> true
             wasm32 -> false
         }
+
+    fun isAndroid(): Boolean =
+        when (this) {
+            androidNativeArm64,
+            androidNativeArm32,
+            androidNativeX64,
+            androidNativeX86 -> true
+            iosArm64,
+            iosSimulatorArm64,
+            iosX64,
+            watchosDeviceArm64,
+            watchosArm64,
+            watchosArm32,
+            watchosSimulatorArm64,
+            watchosX64,
+            tvosArm64,
+            tvosSimulatorArm64,
+            tvosX64,
+            macosArm64,
+            macosX64,
+            linuxArm64,
+            linuxX64,
+            mingwX64,
+            windowsX64,
+            wasm32 -> false
+        }
 }
 
 @Serializable

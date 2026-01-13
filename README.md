@@ -136,6 +136,12 @@ addJvmNativeBuilds(libs.nativebuilds.openssl.libcrypto)
 
 You'll also have to implement JNI wrappers in C/C++ and Kotlin and integrate the C/C++ code with the build as described in the next subsections. You can use the [Kompressor](https://github.com/ensody/Kompressor) project as a reference for how to do that.
 
+You can load the shared library like this on both JVM and Android:
+
+```kotlin
+NativeBuildsJvmLoader.load(NativeBuildsJvmLibCrypto)
+```
+
 ### JNI: Android
 
 For Android you'll also need to integrate your CMakeLists.txt:
@@ -188,7 +194,7 @@ If you want to customize the rule, you can use the code in [AndroidSubstitutionR
 ## Local testing
 
 ```shell
-export ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.13599879
+export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/29.0.13599879
 export BUILD_TARGETS=macosArm64,macosX64,iosArm64,iosSimulatorArm64,iosX64,androidNativeArm64,androidNativeArm32
 ./gradlew assembleProjects
 PUBLISHING=true ./gradlew generateBuildScripts

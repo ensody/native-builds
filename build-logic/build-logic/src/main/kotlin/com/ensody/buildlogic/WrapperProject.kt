@@ -15,13 +15,18 @@ fun KotlinMultiplatformExtension.addCinterops(libProjectName: String, libFileNam
         compilations.getByName("main") {
             cinterops {
                 create(project.name) {
-                    val root = File("${project.rootDir}/generated-kotlin-wrappers/static/$libProjectName/libs/${target.name}")
+                    val root =
+                        File("${project.rootDir}/generated-kotlin-wrappers/static/$libProjectName/libs/${target.name}")
                     val libDir = File(root, if (debug) "debug/lib" else "lib")
                     extraOpts("-libraryPath", libDir.absolutePath)
                     extraOpts(
                         "-staticLibrary",
                         listOf("a", "lib").map { File(libDir, "$libFileName.$it") }.single { it.exists() }.name,
                     )
+                    val cinteropFile = project.file("cinterop.def")
+                    if (cinteropFile.exists()) {
+                        definitionFile.set(cinteropFile)
+                    }
                     packageName = "com.ensody.nativebuilds.kotlin.wrapper.${project.name.replace("-", ".")}"
                 }
             }
@@ -57,11 +62,22 @@ setupBuildLogic {
         ${targets.joinToString("\n        ") { "${it.name}()" }}
         ${if (targets.any { it.jvmDynamicLib }) "jvm()" else ""}
         ${if (targets.any { it.androidAbi != null }) "androidTarget()" else ""}
-        ${if (targets.any { it.dynamicLib }) """
-        sourceSets["jvmCommonMain"].dependencies {
-            api(libs.nativebuilds.loader)
+        ${
+        if (targets.any { it.dynamicLib }) {
+            val sourceSet = when {
+                targets.none { it.jvmDynamicLib } -> "androidMain"
+                targets.none { it.androidAbi != null } -> "jvmMain"
+                else -> "jvmCommonMain"
+            }
+            """
+            sourceSets["$sourceSet"].dependencies {
+                api(libs.nativebuilds.loader)
+            }
+            """.trim()
+        } else {
+            ""
         }
-        """ else ""}
+    }
 
         addCinterops(libProjectName = ${projectName.quote()}, libFileName = ${libName.quote()}, debug = $debug)
     }

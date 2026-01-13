@@ -28,15 +28,15 @@ setupBuildLogic {}
 
 // This is used to publish a new version in case the build script has changed fundamentally
 val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    "brotli" to mapOf("1.2.0" to "2"),
-    "curl" to mapOf("8.18.0" to "2"),
-    "lz4" to mapOf("1.10.0" to ".6"),
-    "nghttp2" to mapOf("1.68.0" to ".6"),
-    "nghttp3" to mapOf("1.14.0" to "2"),
-    "ngtcp2" to mapOf("1.19.0" to "2"),
-    "openssl" to mapOf("3.6.0" to ".8"),
-    "zlib" to mapOf("1.3.1" to ".6"),
-    "zstd" to mapOf("1.5.7" to ".6"),
+    "brotli" to mapOf("1.2.0" to "3"),
+    "curl" to mapOf("8.18.0" to "3"),
+    "lz4" to mapOf("1.10.0" to ".7"),
+    "nghttp2" to mapOf("1.68.0" to ".7"),
+    "nghttp3" to mapOf("1.14.0" to "3"),
+    "ngtcp2" to mapOf("1.19.0" to "3"),
+    "openssl" to mapOf("3.6.0" to ".10"),
+    "zlib" to mapOf("1.3.1" to ".7"),
+    "zstd" to mapOf("1.5.7" to ".7"),
 )
 
 // TODO: Debug builds will have to be done via overlays. They're not fully supported yet.
@@ -80,6 +80,13 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
             val destination = File(overlayTriplets, file.name)
             file.copyTo(destination)
             destination.appendText("\nset(VCPKG_BUILD_TYPE release)\n")
+            var toolchainSetup = mutableListOf<String>()
+            if (target.isAndroid()) {
+                // The vcpkg default triplets use Android API level 28.
+                // Change that to use the same Android API level as Kotlin.
+                // https://github.com/JetBrains/kotlin/blob/v2.3.0/native/utils/src/org/jetbrains/kotlin/konan/target/ClangArgs.kt#L11
+                toolchainSetup += "set(VCPKG_CMAKE_SYSTEM_VERSION 21)"
+            }
 
             // Kotlin Native uses its own toolchain. For example, on Linux it uses its own glibc version.
             // If vcpkg compiles against the host system glibc this might make the resulting static/shared lib depend on
@@ -88,9 +95,7 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
             // 2. The minimum supported glibc versions might be too new for most real-world Linux machines.
             // So, in order to ensure compatibility, we reconfigure vcpkg to use Kotlin Native's own Linux toolchain.
             val sourceToolchain = target.sourceToolchain?.let { file("toolchains/$it") }
-            val toolchainSetup = if (sourceToolchain == null) {
-                ""
-            } else {
+            if (sourceToolchain != null) {
                 val konanDataDir = System.getenv("KONAN_DATA_DIR")?.takeIf { it.isNotBlank() }
                 val distribution = Distribution(
                     konanHome = project(":kotlin-native-setup").properties["konanHome"] as String,
@@ -121,16 +126,16 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
                     toolchainCode = toolchainCode.replace($$"$ENV{$$key}", value.quote().drop(1).dropLast(1))
                 }
                 destinationToolchain.writeText(toolchainCode)
-                "\nset(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${destinationToolchain.absolutePath.quote()})\n"
+                toolchainSetup += "set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${destinationToolchain.absolutePath.quote()})"
             }
-            destination.appendText(toolchainSetup)
+            destination.appendText("\n" + toolchainSetup.joinToString("\n"))
 
             if (target.dynamicLib) {
                 val libFile = baseTriplets.first { it.nameWithoutExtension == target.baseDynamicTriplet }
                 val dynamic = File(overlayTriplets, "${target.dynamicTriplet}.cmake")
                 libFile.copyTo(dynamic)
                 dynamic.appendText("\nset(VCPKG_CRT_LINKAGE dynamic)\nset(VCPKG_LIBRARY_LINKAGE dynamic)\n")
-                dynamic.appendText(toolchainSetup)
+                dynamic.appendText("\n" + toolchainSetup.joinToString("\n"))
             }
         }
     }
@@ -354,6 +359,11 @@ for (pkg in packages) {
             val copied = mutableSetOf<File>()
             for (libName in libNames.sortedByDescending { it.length }) {
                 val pkgDir = File(baseWrappersPath, "${pkg.name}-$libName")
+                when {
+                    pkg.name == "openssl" && libName == "libcrypto" -> {
+                        File(pkgDir, "cinterop.def").writeTextIfDifferent("linkerOpts.android_x86 = -latomic")
+                    }
+                }
                 File(pkgDir, "build.gradle.kts").writeTextIfDifferent(
                     generateBuildGradle(
                         projectName = pkg.name,
