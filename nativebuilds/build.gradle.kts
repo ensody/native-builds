@@ -29,7 +29,7 @@ setupBuildLogic {}
 // This is used to publish a new version in case the build script has changed fundamentally
 val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
     "brotli" to mapOf("1.2.0" to "3"),
-    "curl" to mapOf("8.18.0" to "3"),
+    "curl" to mapOf("8.18.0" to "4"),
     "lz4" to mapOf("1.10.0" to ".7"),
     "nghttp2" to mapOf("1.68.0" to ".7"),
     "nghttp3" to mapOf("1.14.0" to "3"),

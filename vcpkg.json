@@ -11,7 +11,8 @@
       "features": [
         "http2",
         "http3",
-        "openssl"
+        "openssl",
+        "websockets"
       ]
     },
     {
