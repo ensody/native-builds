@@ -46,6 +46,20 @@ val pkgGraph = listOf(
         republishVersionSuffix = mapOf("8.18.0" to "5"),
     ),
     PkgDef(
+        pkg = "libiconv",
+        sublibDependencies = mapOf(
+            "libiconv" to listOf(),
+        ),
+        republishVersionSuffix = mapOf(),
+    ),
+    PkgDef(
+        pkg = "libxml2",
+        sublibDependencies = mapOf(
+            "libxml2" to listOf("libiconv"),
+        ),
+        republishVersionSuffix = mapOf(),
+    ),
+    PkgDef(
         pkg = "lz4",
         sublibDependencies = mapOf(
             "liblz4" to listOf(),
@@ -81,6 +95,13 @@ val pkgGraph = listOf(
             "libssl" to listOf("libcrypto"),
         ),
         republishVersionSuffix = mapOf("3.6.0" to ".13"),
+    ),
+    PkgDef(
+        pkg = "xmlsec",
+        sublibDependencies = mapOf(
+            "libxmlsec" to listOf("libxml2", "openssl"),
+        ),
+        republishVersionSuffix = mapOf(),
     ),
     PkgDef(
         pkg = "zlib",
