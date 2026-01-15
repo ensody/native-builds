@@ -277,7 +277,12 @@ jobs:
         run: ./gradlew --no-daemon assemble
         env:
           WITH_WRAPPERS: "true"
+      - name: Tests
+        run: ./gradlew --no-daemon testAll
+        env:
+          WITH_WRAPPERS: "true"
       - name: Publish
+        if: false
         run: ./gradlew --no-daemon publishToMavenCentral
         env:
           WITH_WRAPPERS: "true"
