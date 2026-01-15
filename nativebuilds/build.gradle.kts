@@ -34,7 +34,7 @@ val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
     "nghttp2" to mapOf("1.68.0" to ".7"),
     "nghttp3" to mapOf("1.14.0" to "3"),
     "ngtcp2" to mapOf("1.19.0" to "3"),
-    "openssl" to mapOf("3.6.0" to ".10"),
+    "openssl" to mapOf("3.6.0" to ".12"),
     "zlib" to mapOf("1.3.1" to ".7"),
     "zstd" to mapOf("1.5.7" to ".7"),
 )
@@ -128,14 +128,14 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
                 destinationToolchain.writeText(toolchainCode)
                 toolchainSetup += "set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${destinationToolchain.absolutePath.quote()})"
             }
-            destination.appendText("\n" + toolchainSetup.joinToString("\n"))
+            destination.appendText("\n" + toolchainSetup.joinToString("\n") + "\n")
 
             if (target.dynamicLib) {
                 val libFile = baseTriplets.first { it.nameWithoutExtension == target.baseDynamicTriplet }
                 val dynamic = File(overlayTriplets, "${target.dynamicTriplet}.cmake")
                 libFile.copyTo(dynamic)
                 dynamic.appendText("\nset(VCPKG_CRT_LINKAGE dynamic)\nset(VCPKG_LIBRARY_LINKAGE dynamic)\n")
-                dynamic.appendText("\n" + toolchainSetup.joinToString("\n"))
+                dynamic.appendText("\n" + toolchainSetup.joinToString("\n") + "\n")
             }
         }
     }
@@ -173,6 +173,8 @@ val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(
 
             BuildTarget.linuxArm64,
             BuildTarget.linuxX64,
+            -> OS.Linux
+
             BuildTarget.androidNativeArm64,
             BuildTarget.androidNativeArm32,
             BuildTarget.androidNativeX64,
@@ -194,7 +196,9 @@ val targets = System.getenv("BUILD_TARGETS")?.takeIf { it.isNotBlank() }?.split(
 
 println("Building for targets: ${targets.joinToString(", ") { it.name }}")
 
-val assembleTask = tasks.register("assembleProjects").get()
+val assembleTask = tasks.register("assembleProjects") {
+    dependsOn("cleanNativeBuild")
+}.get()
 for (target in targets) {
     if (packages.all { it.isPublished }) continue
 
