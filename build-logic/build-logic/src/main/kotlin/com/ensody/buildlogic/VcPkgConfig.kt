@@ -102,7 +102,7 @@ data class BuildPackage(
     val config: VcPkgConfig,
 ) {
     @Transient
-    val license: License = License.get(config.license)
+    val license: License = if (name == "libiconv") License.LGPL21 else License.get(config.license!!)
 
     val isPublished: Boolean by lazy {
         isPublished(null)
@@ -128,8 +128,11 @@ enum class License(val id: String, val longName: String, val url: String) {
     ),
     BSD2("BSD-2-Clause", "BSD 2-Clause", "https://opensource.org/license/BSD-2-Clause"),
     BSD3("BSD-3-Clause", "BSD 3-Clause", "https://opensource.org/license/BSD-3-Clause"),
+    ICU("ICU", "ICU License", "https://spdx.org/licenses/ICU.html"),
+    LGPL21("LGPL-2.1", "GNU Lesser General Public License v2.1", "https://spdx.org/licenses/LGPL-2.1.html"),
     MIT("MIT", "The MIT License", "https://opensource.org/license/mit"),
     MIT_CMU("MIT-CMU", "CMU License", "https://spdx.org/licenses/MIT-CMU.html"),
+    X11_MPL11("X11 AND MPL-1.1", "X11 and MPL-1.1 Licenses", "https://spdx.org/licenses/X11.html"),
     Curl("curl", "curl License", "https://spdx.org/licenses/curl.html"),
     ZLib("Zlib", "zlib License", "https://www.zlib.net/zlib_license.html"),
     ;
@@ -244,7 +247,7 @@ data class VcPkgConfig(
     val version: String,
     val dependencies: List<VcPkgDependency> = emptyList(),
     val features: Map<String, VcPkgFeature> = emptyMap(),
-    val license: String = "",
+    val license: String? = null,
     @SerialName("default-features")
     val defaultFeatures: List<VcPkgDefaultFeature> = emptyList(),
 ) {
