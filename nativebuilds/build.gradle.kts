@@ -4,6 +4,7 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.ensody.buildlogic.BuildPackage
 import com.ensody.buildlogic.BuildTarget
 import com.ensody.buildlogic.GroupId
+import com.ensody.buildlogic.PkgDef
 import com.ensody.buildlogic.OS
 import com.ensody.buildlogic.cli
 import com.ensody.buildlogic.generateBuildGradle
@@ -26,18 +27,75 @@ plugins {
 
 setupBuildLogic {}
 
-// This is used to publish a new version in case the build script has changed fundamentally
-val rebuildVersionWithSuffix = mapOf<String, Map<String, String>>(
-    "brotli" to mapOf("1.2.0" to "3"),
-    "curl" to mapOf("8.18.0" to "4"),
-    "lz4" to mapOf("1.10.0" to ".7"),
-    "nghttp2" to mapOf("1.68.0" to ".7"),
-    "nghttp3" to mapOf("1.14.0" to "3"),
-    "ngtcp2" to mapOf("1.19.0" to "3"),
-    "openssl" to mapOf("3.6.0" to ".12"),
-    "zlib" to mapOf("1.3.1" to ".7"),
-    "zstd" to mapOf("1.5.7" to ".7"),
-)
+val pkgGraph = listOf(
+    PkgDef(
+        pkg = "brotli",
+        sublibDependencies = mapOf(
+            "libbrotlicommon" to listOf(),
+            "libbrotlidec" to listOf("libbrotlicommon"),
+            "libbrotlienc" to listOf("libbrotlicommon"),
+        ),
+        republishVersionSuffix = mapOf("1.2.0" to "3"),
+    ),
+    PkgDef(
+        pkg = "curl",
+        sublibDependencies = mapOf(
+            "libcurl" to listOf("libcrypto", "libssl", "libnghttp2", "libnghttp3", "libtcp2", "libz"),
+        ),
+        republishVersionSuffix = mapOf("8.18.0" to "4"),
+    ),
+    PkgDef(
+        pkg = "lz4",
+        sublibDependencies = mapOf(
+            "liblz4" to listOf(),
+        ),
+        republishVersionSuffix = mapOf("1.10.0" to ".7"),
+    ),
+    PkgDef(
+        pkg = "nghttp2",
+        sublibDependencies = mapOf(
+            "libnghttp2" to listOf(),
+        ),
+        republishVersionSuffix = mapOf("1.68.0" to ".7"),
+    ),
+    PkgDef(
+        pkg = "nghttp3",
+        sublibDependencies = mapOf(
+            "libnghttp3" to listOf(),
+        ),
+        republishVersionSuffix = mapOf("1.14.0" to "3"),
+    ),
+    PkgDef(
+        pkg = "ngtcp2",
+        sublibDependencies = mapOf(
+            "libngtcp2" to listOf(),
+            "libngtcp2_crypto_ossl" to listOf("libngtcp2", "libcrypto"),
+        ),
+        republishVersionSuffix = mapOf("1.19.0" to "3"),
+    ),
+    PkgDef(
+        pkg = "openssl",
+        sublibDependencies = mapOf(
+            "libcrypto" to listOf(),
+            "libssl" to listOf("libcrypto"),
+        ),
+        republishVersionSuffix = mapOf("3.6.0" to ".12"),
+    ),
+    PkgDef(
+        pkg = "zlib",
+        sublibDependencies = mapOf(
+            "libz" to listOf(),
+        ),
+        republishVersionSuffix = mapOf("1.3.1" to ".7"),
+    ),
+    PkgDef(
+        pkg = "zstd",
+        sublibDependencies = mapOf(
+            "libzstd" to listOf(),
+        ),
+        republishVersionSuffix = mapOf("1.5.7" to ".7"),
+    ),
+).associateBy { it.pkg }
 
 // TODO: Debug builds will have to be done via overlays. They're not fully supported yet.
 val includeDebugBuilds = System.getenv("INCLUDE_DEBUG_BUILDS") == "true"
@@ -142,7 +200,7 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
 }
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
-    rebuildVersionWithSuffix[pkg.name]?.get(pkg.version)?.let {
+    pkgGraph[pkg.name]?.republishVersionSuffix?.get(pkg.version)?.let {
         val separator = if (it[0].isDigit()) "_" else ""
         pkg.copy(version = "${pkg.version}$separator$it")
     } ?: pkg
@@ -282,6 +340,8 @@ val generateBuildScriptsTask = tasks.register("generateBuildScripts")
 for (pkg in packages) {
     if (!isPublishing || pkg.isPublished) continue
 
+    val pkgDef = pkgGraph.getValue(pkg.name)
+
     val baseWrappersPath = File(wrappersPath, "static")
     val pkgPath = File(baseWrappersPath, pkg.name)
 
@@ -362,6 +422,7 @@ for (pkg in packages) {
         doLast {
             val copied = mutableSetOf<File>()
             for (libName in libNames.sortedByDescending { it.length }) {
+                val libDependencies = pkgDef.sublibDependencies.getValue(libName)
                 val pkgDir = File(baseWrappersPath, "${pkg.name}-$libName")
                 when {
                     pkg.name == "openssl" && libName == "libcrypto" -> {
@@ -370,7 +431,7 @@ for (pkg in packages) {
                 }
                 File(pkgDir, "build.gradle.kts").writeTextIfDifferent(
                     generateBuildGradle(
-                        projectName = pkg.name,
+                        pkgDef = pkgDef,
                         libName = libName,
                         version = pkg.version,
                         license = pkg.license,
@@ -379,10 +440,32 @@ for (pkg in packages) {
                     ),
                 )
                 copied.addAll(copyDynamicLib(pkgDir, libName, exclude = copied))
+
+                if (libDependencies.isEmpty()) {
+                    val className = "BuildTest"
+                    File(
+                        pkgDir,
+                        "src/commonTest/kotlin/com/ensody/nativebuilds/${pkg.name.lowercase()}/$className.kt",
+                    )
+                        .writeTextIfDifferent(
+                            """
+                package com.ensody.nativebuilds.${pkg.name.lowercase()}
+
+                import kotlin.test.Test
+
+                internal class $className {
+                    @Test
+                    fun buildTest() {
+                    }
+                }
+                """.trimIndent().trim() + "\n",
+                        )
+                }
+
                 if (includeDebugBuilds) {
                     File(baseWrappersPath, "${pkg.name}-$libName--debug/build.gradle.kts").writeTextIfDifferent(
                         generateBuildGradle(
-                            projectName = pkg.name,
+                            pkgDef = pkgDef,
                             libName = libName,
                             version = pkg.version,
                             license = pkg.license,

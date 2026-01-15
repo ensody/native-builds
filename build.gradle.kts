@@ -6,3 +6,5 @@ plugins {
 }
 
 initBuildLogic()
+
+tasks.register("testAll")

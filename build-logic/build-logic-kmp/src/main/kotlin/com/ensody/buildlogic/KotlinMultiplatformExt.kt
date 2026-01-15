@@ -36,8 +36,10 @@ fun Project.setupKmp(
     }
 
     tasks.withType<Test> {
+        failOnNoDiscoveredTests.set(false)
         testLogging {
             exceptionFormat = TestExceptionFormat.FULL
+            showStandardStreams = true
         }
     }
 

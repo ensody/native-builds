@@ -5,6 +5,7 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.support.uppercaseFirstChar
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
@@ -35,13 +36,14 @@ fun KotlinMultiplatformExtension.addCinterops(libProjectName: String, libFileNam
 }
 
 fun generateBuildGradle(
-    projectName: String,
+    pkgDef: PkgDef,
     libName: String,
     version: String,
     license: License,
     targets: List<BuildTarget>,
     debug: Boolean,
 ): String {
+    val libDependencies = pkgDef.sublibDependencies.getValue(libName)
     var result = """
 import com.ensody.buildlogic.License
 import com.ensody.buildlogic.addCinterops
@@ -65,13 +67,17 @@ setupBuildLogic {
         ${
         if (targets.any { it.dynamicLib }) {
             val sourceSet = when {
-                targets.none { it.jvmDynamicLib } -> "androidMain"
-                targets.none { it.androidAbi != null } -> "jvmMain"
-                else -> "jvmCommonMain"
+                targets.none { it.jvmDynamicLib } -> "android"
+                targets.none { it.androidAbi != null } -> "jvm"
+                else -> "jvmCommon"
             }
             """
-            sourceSets["$sourceSet"].dependencies {
+            sourceSets["${sourceSet}Main"].dependencies {
                 api(libs.nativebuilds.loader)
+            }
+            sourceSets["${sourceSet}Test"].dependencies {
+                implementation(libs.kotlin.test.junit)
+                implementation(libs.junit)
             }
             """.trim()
         } else {
@@ -79,7 +85,11 @@ setupBuildLogic {
         }
     }
 
-        addCinterops(libProjectName = ${projectName.quote()}, libFileName = ${libName.quote()}, debug = $debug)
+        tasks.register("testAll") {
+            ${if (libDependencies.isEmpty()) "dependsOn(${targets.joinToString { ("linkDebugTest" + it.name.uppercaseFirstChar()).quote() }})" else ""}
+        }
+
+        addCinterops(libProjectName = ${pkgDef.pkg.quote()}, libFileName = ${libName.quote()}, debug = $debug)
     }
 }
 

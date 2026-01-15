@@ -12,6 +12,7 @@ import org.gradle.api.plugins.catalog.CatalogPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.kotlin.dsl.assign
 import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.repositories
 import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
 import org.jetbrains.dokka.gradle.DokkaExtension
@@ -53,24 +54,9 @@ fun Project.setupBuildLogic(block: Project.() -> Unit) {
             setupAndroid(coreLibraryDesugaring = rootLibs.findLibrary("desugarJdkLibs").get())
         }
         if (extensions.findByType<KotlinMultiplatformExtension>() != null) {
-            setupKmp {}
-            // testDebugUnitTest throws an error if there are no tests
-            val hasTests = file("src").listFiles().orEmpty().any { sourceSet ->
-                sourceSet.name.endsWith("Test") && sourceSet.walkTopDown().any { it.extension == "kt" }
-            }
-            tasks.register("testAll") {
-                group = "verification"
-                if (hasTests) {
-                    dependsOn(
-                        "testDebugUnitTest",
-                        "jvmTest",
-                        "iosSimulatorArm64Test",
-                        "iosX64Test",
-                        "macosArm64Test",
-                        "macosX64Test",
-                        "mingwX64Test",
-                        "linuxX64Test",
-                    )
+            setupKmp {
+                sourceSets["commonTest"].dependencies {
+                    implementation(rootLibs.findLibrary("kotlin-test-main").get())
                 }
             }
         }
