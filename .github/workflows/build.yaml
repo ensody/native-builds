@@ -41,7 +41,6 @@ jobs:
         with:
           path: |
             .vcpkg-cache
-            vcpkg/buildtrees
             vcpkg/downloads
           key: ${{ runner.os }}-${{ runner.arch }}-${{ matrix.split }}
       - name: Setup vcpkg
@@ -71,13 +70,17 @@ jobs:
           path: generated-kotlin-wrappers
           if-no-files-found: "ignore"
       - name: Upload the build report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@master
         with:
           name: build-report-windows-${{ matrix.split }}
           path: |
             **/build/reports/
-            vcpkg/buildtrees/**/*.log
+            nativebuilds/build/nativebuilds-toolchains/
+            nativebuilds/build/nativebuilds-triplets/
+            vcpkg/buildtrees/*/build-*.log
+            vcpkg/buildtrees/*/config-*.log
+            vcpkg/buildtrees/*/stdout-*.log
 
   linux-x64:
     name: Build on Linux x64
@@ -103,7 +106,6 @@ jobs:
         with:
           path: |
             .vcpkg-cache
-            vcpkg/buildtrees
             vcpkg/downloads
           key: ${{ runner.os }}-${{ runner.arch }}-${{ matrix.split }}
       - name: Install build tools
@@ -150,13 +152,17 @@ jobs:
           path: generated-kotlin-wrappers
           if-no-files-found: "ignore"
       - name: Upload the build report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@master
         with:
           name: build-report-linux-x64-${{ matrix.split }}
           path: |
             **/build/reports/
-            vcpkg/buildtrees/**/*.log
+            nativebuilds/build/nativebuilds-toolchains/
+            nativebuilds/build/nativebuilds-triplets/
+            vcpkg/buildtrees/*/build-*.log
+            vcpkg/buildtrees/*/config-*.log
+            vcpkg/buildtrees/*/stdout-*.log
 
   macos:
     name: Build on macOS
@@ -182,7 +188,6 @@ jobs:
         with:
           path: |
             .vcpkg-cache
-            vcpkg/buildtrees
             vcpkg/downloads
           key: ${{ runner.os }}-${{ runner.arch }}-${{ matrix.split }}
       - name: Setup vcpkg
@@ -212,13 +217,17 @@ jobs:
           path: generated-kotlin-wrappers
           if-no-files-found: "ignore"
       - name: Upload the build report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@master
         with:
           name: build-report-macos-${{ matrix.split }}
           path: |
             **/build/reports/
-            vcpkg/buildtrees/**/*.log
+            nativebuilds/build/nativebuilds-toolchains/
+            nativebuilds/build/nativebuilds-triplets/
+            vcpkg/buildtrees/*/build-*.log
+            vcpkg/buildtrees/*/config-*.log
+            vcpkg/buildtrees/*/stdout-*.log
 
   publish:
     name: Publish artifacts
@@ -278,10 +287,14 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY_RING }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
       - name: Upload the build report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@master
         with:
           name: build-report-publish
           path: |
             **/build/reports/
-            vcpkg/buildtrees/**/*.log
+            nativebuilds/build/nativebuilds-toolchains/
+            nativebuilds/build/nativebuilds-triplets/
+            vcpkg/buildtrees/*/build-*.log
+            vcpkg/buildtrees/*/config-*.log
+            vcpkg/buildtrees/*/stdout-*.log
