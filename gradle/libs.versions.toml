@@ -19,6 +19,7 @@ nativebuilds-loader = { module = "com.ensody.nativebuilds:nativebuilds-loader", 
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.7.3" }
 
 gradle-android = { module = "com.android.tools.build:gradle", version = "8.13.2" }
+gradle-android-api = { module = "com.android.tools.build:gradle-api", version = "8.13.2" }
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradle-cocoapods = { module = "org.jetbrains.kotlin.native.cocoapods:org.jetbrains.kotlin.native.cocoapods.gradle.plugin", version.ref = "kotlin" }
 gradle-dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version = "2.0.0" }

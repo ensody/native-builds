@@ -14,6 +14,7 @@ dependencies {
 setupBuildLogic {
     dependencies {
         compileOnly(libs.gradle.kotlin)
+        compileOnly(libs.gradle.android.api)
     }
 
     gradlePlugin {

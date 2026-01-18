@@ -51,6 +51,9 @@ fun shell(
     return cli(*shellCommand, command, workingDir = workingDir, env = env, inheritIO = inheritIO)
 }
 
+fun String.normalizeNewlines(): String =
+    replace("\r\n", "\n").replace("\r", "\n").trim() + "\n"
+
 fun File.writeTextIfDifferent(text: String) {
     if (!exists() || readText() != text) {
         parentFile.mkdirs()

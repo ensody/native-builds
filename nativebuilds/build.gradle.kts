@@ -10,15 +10,16 @@ import com.ensody.buildlogic.cli
 import com.ensody.buildlogic.generateBuildGradle
 import com.ensody.buildlogic.json
 import com.ensody.buildlogic.loadBuildPackages
+import com.ensody.buildlogic.normalizeNewlines
 import com.ensody.buildlogic.registerZipTask
 import com.ensody.buildlogic.renameLeafName
 import com.ensody.buildlogic.setupBuildLogic
 import io.ktor.http.quote
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import org.jetbrains.kotlin.konan.target.Distribution
 import org.jetbrains.kotlin.konan.target.Family
-import org.jetbrains.kotlin.konan.util.DependencyDirectories as KonanDependencyDirectories
 
 plugins {
     id("com.ensody.build-logic.base")
@@ -35,35 +36,35 @@ val pkgGraph = listOf(
             "libbrotlidec" to listOf("libbrotlicommon"),
             "libbrotlienc" to listOf("libbrotlicommon"),
         ),
-        republishVersionSuffix = mapOf("1.2.0" to "3"),
+        republishVersionSuffix = mapOf("1.2.0" to "4"),
     ),
     PkgDef(
         pkg = "curl",
         sublibDependencies = mapOf(
             "libcurl" to listOf("libcrypto", "libssl", "libnghttp2", "libnghttp3", "libtcp2", "libz"),
         ),
-        republishVersionSuffix = mapOf("8.18.0" to "4"),
+        republishVersionSuffix = mapOf("8.18.0" to "5"),
     ),
     PkgDef(
         pkg = "lz4",
         sublibDependencies = mapOf(
             "liblz4" to listOf(),
         ),
-        republishVersionSuffix = mapOf("1.10.0" to ".7"),
+        republishVersionSuffix = mapOf("1.10.0" to ".8"),
     ),
     PkgDef(
         pkg = "nghttp2",
         sublibDependencies = mapOf(
             "libnghttp2" to listOf(),
         ),
-        republishVersionSuffix = mapOf("1.68.0" to ".7"),
+        republishVersionSuffix = mapOf("1.68.0" to ".8"),
     ),
     PkgDef(
         pkg = "nghttp3",
         sublibDependencies = mapOf(
             "libnghttp3" to listOf(),
         ),
-        republishVersionSuffix = mapOf("1.14.0" to "3"),
+        republishVersionSuffix = mapOf("1.14.0" to "4"),
     ),
     PkgDef(
         pkg = "ngtcp2",
@@ -71,7 +72,7 @@ val pkgGraph = listOf(
             "libngtcp2" to listOf(),
             "libngtcp2_crypto_ossl" to listOf("libngtcp2", "libcrypto"),
         ),
-        republishVersionSuffix = mapOf("1.19.0" to "3"),
+        republishVersionSuffix = mapOf("1.19.0" to "4"),
     ),
     PkgDef(
         pkg = "openssl",
@@ -79,21 +80,21 @@ val pkgGraph = listOf(
             "libcrypto" to listOf(),
             "libssl" to listOf("libcrypto"),
         ),
-        republishVersionSuffix = mapOf("3.6.0" to ".12"),
+        republishVersionSuffix = mapOf("3.6.0" to ".13"),
     ),
     PkgDef(
         pkg = "zlib",
         sublibDependencies = mapOf(
             "libz" to listOf(),
         ),
-        republishVersionSuffix = mapOf("1.3.1" to ".7"),
+        republishVersionSuffix = mapOf("1.3.1" to ".8"),
     ),
     PkgDef(
         pkg = "zstd",
         sublibDependencies = mapOf(
             "libzstd" to listOf(),
         ),
-        republishVersionSuffix = mapOf("1.5.7" to ".7"),
+        republishVersionSuffix = mapOf("1.5.7" to ".8"),
     ),
 ).associateBy { it.pkg }
 
@@ -102,9 +103,10 @@ val includeDebugBuilds = System.getenv("INCLUDE_DEBUG_BUILDS") == "true"
 val isPublishing = System.getenv("PUBLISHING") == "true"
 
 val nativeBuildPath = layout.buildDirectory.dir("nativebuilds").get().asFile
+val deduplicatedHeadersBasePath = layout.buildDirectory.dir("nativebuilds-headers").get().asFile
 val overlayTriplets = layout.buildDirectory.dir("nativebuilds-triplets").get().asFile
 val overlayToolchains = layout.buildDirectory.dir("nativebuilds-toolchains").get().asFile
-val wrappersPath = File("$rootDir/generated-kotlin-wrappers")
+val wrappersPath = File(rootDir, "generated-kotlin-wrappers")
 val initBuildTask = tasks.register("cleanNativeBuild") {
     dependsOn(project(":kotlin-native-setup").tasks.named("assemble"))
 
@@ -166,8 +168,7 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
                     "llvm.${konanTarget.name}.user"
                 }
                 val toolchainName = distribution.properties.getProperty(toolchainKey)
-                val toolchainDirectory =
-                    File(KonanDependencyDirectories.getDependenciesRoot(konanDataDir), toolchainName)
+                val toolchainDirectory = File(distribution.dependenciesDir, toolchainName)
                 val env = mutableMapOf<String, String>(
                     "VCPKG_ROOT" to File(rootDir, "vcpkg").absolutePath,
                     "TOOLCHAIN_DIR" to toolchainDirectory.absolutePath,
@@ -353,6 +354,11 @@ for (pkg in packages) {
     }.map {
         it.nameWithoutExtension
     }.toSet()
+    // TODO: We could handle this case by auto-renaming the respective module, so it won't clash with the headers module
+    //  but this is so extremely unlikely that we simply detect this case and fail, so then can handle it once necessary
+    check("headers" !in libNames) {
+        "Package ${pkg.name} contains a lib without \"lib\" prefix that is named just \"headers\""
+    }
 
     fun copyDynamicLib(pkgDir: File, libName: String, exclude: Set<File>): Set<File> {
         val targetsMap = mutableMapOf<String, String>()
@@ -391,6 +397,9 @@ for (pkg in packages) {
                 buildJsonObject {
                     put("package", pkg.name)
                     put("lib", libName)
+                    putJsonObject("platformFileName") {
+                        for ((k, v) in targetsMap) put(k, v)
+                    }
                 }.toString(),
             )
         }
@@ -480,35 +489,43 @@ for (pkg in packages) {
     generateBuildScriptsTask.dependsOn(pkgScriptTask)
 
     val headersPkgName = "${pkg.name}-headers"
-    // Sometimes the headers are different per target (e.g. OpenSSL's configuration.h).
-    for (child in libTargets) {
-        val (artifactName, zipTask) = registerZipTask(headersPkgName, child)
-        publishing {
-            publications {
-                create<MavenPublication>(artifactName) {
-                    artifactId = artifactName
-                    groupId = GroupId
-                    version = pkg.version
-                    pom {
-                        licenses {
-                            license {
-                                name = pkg.license.longName
-                                url = pkg.license.url
-                            }
-                        }
-                    }
-                    artifact(zipTask)
-                }
-            }
+    // Sometimes the headers are different per target (e.g. OpenSSL's configuration.h). Deduplicate all common headers
+    // into a separate "common" folder within the zip file and the remaining
+    val headers = libTargets.associateWith { targetOutDir ->
+        val includeDir = File(targetOutDir, "include")
+        includeDir.walkBottomUp().filter { it.isFile }.map { it.absoluteFile.relativeTo(includeDir) }.toSet()
+    }
+    val commonFilePaths = headers.values.fold(headers.values.firstOrNull().orEmpty()) { acc, files ->
+        acc.intersect(files)
+    }
+    val baseIncludes = File(libTargets.first(), "include")
+    val identicalFiles = commonFilePaths.filter { relativePath ->
+        val content = File(baseIncludes, relativePath.path).readText().normalizeNewlines()
+        libTargets.minus(libTargets.first()).all {
+            File(it, "include/${relativePath.path}").readText().normalizeNewlines() == content
         }
     }
-
+    val deduplicatedPath = File(deduplicatedHeadersBasePath, pkg.name)
+    deduplicatedPath.deleteRecursively()
+    for (relativePath in identicalFiles) {
+        val content = File(baseIncludes, relativePath.path).readText().normalizeNewlines()
+        File(deduplicatedPath, "common/${relativePath.path}").writeTextIfDifferent(content)
+    }
+    for ((targetOutDir, paths) in headers) {
+        val outDir = File(deduplicatedPath, targetOutDir.name)
+        for (relativePath in paths - identicalFiles.toSet()) {
+            val content = File(targetOutDir, "include/${relativePath.path}").readText()
+            File(outDir, relativePath.path).writeTextIfDifferent(content)
+        }
+    }
+    val zipTask = registerZipTask(headersPkgName, deduplicatedPath)
     publishing {
         publications {
             create<MavenPublication>(headersPkgName) {
                 artifactId = headersPkgName
                 groupId = GroupId
                 version = pkg.version
+                artifact(zipTask)
                 pom {
                     licenses {
                         license {

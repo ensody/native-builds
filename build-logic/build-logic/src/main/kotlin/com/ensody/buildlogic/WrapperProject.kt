@@ -1,10 +1,6 @@
 package com.ensody.buildlogic
 
 import io.ktor.http.quote
-import org.gradle.api.Project
-import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.bundling.Zip
-import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.support.uppercaseFirstChar
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -47,7 +43,6 @@ fun generateBuildGradle(
     var result = """
 import com.ensody.buildlogic.License
 import com.ensody.buildlogic.addCinterops
-import com.ensody.buildlogic.registerZipTask
 import com.ensody.buildlogic.setupBuildLogic
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 
@@ -106,16 +101,4 @@ extensions.configure<MavenPublishBaseExtension> {
 """.trim() + "\n"
 
     return result
-}
-
-fun Project.registerZipTask(libProjectName: String, child: File): Pair<String, TaskProvider<Zip>> {
-    val artifactName = "$libProjectName-${child.name.lowercase()}"
-    val mainZipTask = tasks.findByName("zipNativeBuilds") ?: tasks.register("zipNativeBuilds").get()
-    return artifactName to tasks.register<Zip>("zip-$artifactName") {
-        archiveFileName.set("$artifactName.zip")
-        destinationDirectory.set(layout.buildDirectory.dir("nativebuilds-artifacts"))
-        from(child) {
-            include("include/**")
-        }
-    }.also { mainZipTask.dependsOn(it) }
 }
