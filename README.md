@@ -54,20 +54,34 @@ For example, a KMP crypto library could depend on libcrypto.a and Ktor could als
 
 ## Usage
 
+### Prerequisites
+
+If you want to implement a JNI integration in C/C++ using the NativeBuilds Gradle plugin, you must install [Zig](https://ziglang.org) and place it in your PATH.
+Zig is used for cross-compiling your C/C++ code to all targets (linuxArm64, linuxX64, macosArm64, macosX64, mingwX64).
+
+You don't need Zig if you're just consuming the pre-built libraries (i.e., you're not writing any C/C++ code).
+
+### Example
+
+Take a look at the [Kompressor](https://github.com/ensody/Kompressor) project to see a real-world example. NativeBuilds is used in the modules that are named "...--nativelib".
+
+### Step by step
+
 Add the dependencies, based on the Maven modules mentioned above, to your `gradle/libs.versions.toml`:
 
 ```toml
 [versions]
 # Note: these might not be the latest version numbers. Please check the version badges above.
-openssl = "3.6.0.4"
-nativebuilds = "0.7.0"
+openssl = "3.6.0.13"
+nativebuilds = "0.8.0"
 
 [libraries]
 # KMP wrapper module for libcrypto.a
 nativebuilds-openssl-libcrypto = { module = "com.ensody.nativebuilds:openssl-libcrypto", version.ref = "openssl" }
 # KMP wrapper module for libssl.a
 nativebuilds-openssl-libssl = { module = "com.ensody.nativebuilds:openssl-libssl", version.ref = "openssl" }
-# Needed to integrate the OpenSSL headers for cinterop (only if you need to call the C API directly).
+# Needed to integrate the OpenSSL headers for cinterop (only if you're creating a C/C++ wrapper
+# and need to call the C API directly).
 nativebuilds-openssl-headers = { module = "com.ensody.nativebuilds:openssl-headers", version.ref = "openssl" }
 
 [plugins]
@@ -78,11 +92,15 @@ Add the plugin to your `build.gradle.kts`:
 
 ```kotlin
 plugins {
+    kotlin("multiplatform")
+    id("com.android.kotlin.multiplatform.library") // or com.android.library
     alias(libs.plugins.nativebuilds)
 }
 
 kotlin {
-    // List all desired targets
+    // List all desired targets. The NativeBuilds Gradle plugin will take the active targets into account.
+    androidTarget()
+    jvm()
     iosArm64()
     iosSimulatorArm64()
     iosx64()
@@ -102,9 +120,26 @@ kotlin {
         definitionFile.set(file("src/nativeMain/cinterop/openssl.def"))
     }
 }
+
+// Add the KMP dependency for JNI C++ integration. This will integrate both Android and JVM.
+jniNativeBuild(
+    name = "libcrypto-jni",
+    // This links against the libcrypto shared library and makes the headers available in your C/C++ code.
+    nativeBuilds = listOf(
+        libs.nativebuilds.openssl.headers,
+        libs.nativebuilds.openssl.libcrypto,
+    ),
+) {
+    // Path(s) to the JNI C++ source code (where the .cpp files reside)
+    inputFiles.from("src/jvmCommonMain/jni")
+
+    // Optional: Path(s) to any additional headers
+    // includeDirs.from("../jni/common/include")
+}
 ```
 
-Create `src/nativeMain/cinterop/openssl.def`, but don't define staticLibraries. The native .a is already part of `api(libs.nativebuilds.openssl.libcrypto)` above.
+For Kotlin/Native, create `src/nativeMain/cinterop/openssl.def`, but don't define `staticLibraries`.
+The native .a is already part of `api(libs.nativebuilds.openssl.libcrypto)` in the `dependencies` block above.
 
 ```
 package = my.package.openssl
@@ -124,60 +159,17 @@ Make sure your `gradle.properties` activates cinterop:
 kotlin.mpp.enableCInteropCommonization=true
 ```
 
-After the Gradle sync you can import the OpenSSL APIs within nativeMain (or iosMain etc.).
+After a Gradle sync you can import the OpenSSL APIs within nativeMain (or iosMain etc.).
 
-## JNI: JVM and Android
-
-On the JVM and on Android you can integrate the pre-built shared libraries for all desktop and Android targets by adding this to your build.gradle.kts:
-
-```kotlin
-addJvmNativeBuilds(libs.nativebuilds.openssl.libcrypto)
-```
-
-You'll also have to implement JNI wrappers in C/C++ and Kotlin and integrate the C/C++ code with the build as described in the next subsections. You can use the [Kompressor](https://github.com/ensody/Kompressor) project as a reference for how to do that.
-
-You can load the shared library like this on both JVM and Android:
+Also, you can place JNI C++ code under `src/jvmCommonMain/jni` (as configured above).
+You don't need to write any additional build scripts (not even the Android CMakeLists.txt).
+On the JVM and Android, you can load the shared library at runtime like this:
 
 ```kotlin
 NativeBuildsJvmLoader.load(NativeBuildsJvmLibCrypto)
 ```
 
-### JNI: Android
-
-For Android you'll also need to integrate your CMakeLists.txt:
-
-```kotlin
-android {
-    externalNativeBuild {
-        cmake {
-            path = file("src/androidMain/CMakeLists.txt")
-        }
-    }
-}
-```
-
-The CMakeLists.txt can utilize a pre-generated CMake helper:
-
-```cmake
-# Define a variable for the generated CMake helper's path
-set(NATIVEBUILDS_CMAKE_DIR "${PROJECT_SOURCE_DIR}/../../build/nativebuilds-cmake")
-
-# Include the CMake helper.
-# This automatically includes the headers for openssl-libcrypto and makes the shared library accessible.
-include("${NATIVEBUILDS_CMAKE_DIR}/openssl-libcrypto-android.cmake")
-
-# Link against the shared library
-target_link_libraries(myproject openssl-libcrypto)
-```
-
-### JNI: JVM
-
-On the JVM you currently need to invest a little bit more effort for your JNI wrapper. One possibility is to use Zig to cross-compile for all desktop targets.
-
-Again, take a look at the [Kompressor](https://github.com/ensody/Kompressor) project:
-
-* `assembleZigJni` in [build.gradle.kts](https://github.com/ensody/Kompressor/blob/main/kompressor-zstd--nativelib/build.gradle.kts)
-* [build.zig](https://github.com/ensody/Kompressor/blob/main/kompressor-zstd--nativelib/src/jvmMain/build.zig)
+Again, take a look at [Kompressor](https://github.com/ensody/Kompressor) for a real-world usage example.
 
 ## Android unit tests
 
@@ -193,15 +185,19 @@ If you want to customize the rule, you can use the code in [AndroidSubstitutionR
 
 ## Local testing
 
+Note: Only not-yet-published versions get built. In `nativebuilds/build.gradle.kts` you can change the
+`republishVersionSuffix` to re-map to a new version in order to force a new build.
+
 ```shell
 export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/29.0.13599879
 export BUILD_TARGETS=macosArm64,macosX64,iosArm64,iosSimulatorArm64,iosX64,androidNativeArm64,androidNativeArm32
 ./gradlew assembleProjects
 PUBLISHING=true ./gradlew generateBuildScripts
+# This publishes to build/localmaven
 PUBLISHING=true WITH_WRAPPERS=true ./gradlew publishAllPublicationsToLocalMavenRepository
+# Alternatively, you can publish to mavenLocal
+# PUBLISHING=true WITH_WRAPPERS=true ./gradlew pTML
 ```
-
-The artifacts will be placed in build/localmaven.
 
 ## License
 
