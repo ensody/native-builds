@@ -80,6 +80,7 @@ jobs:
             nativebuilds/build/nativebuilds-triplets/
             vcpkg/buildtrees/*/build-*.log
             vcpkg/buildtrees/*/config-*.log
+            vcpkg/buildtrees/*/install-*.log
             vcpkg/buildtrees/*/stdout-*.log
 
   linux-x64:
@@ -162,6 +163,7 @@ jobs:
             nativebuilds/build/nativebuilds-triplets/
             vcpkg/buildtrees/*/build-*.log
             vcpkg/buildtrees/*/config-*.log
+            vcpkg/buildtrees/*/install-*.log
             vcpkg/buildtrees/*/stdout-*.log
 
   macos:
@@ -227,6 +229,7 @@ jobs:
             nativebuilds/build/nativebuilds-triplets/
             vcpkg/buildtrees/*/build-*.log
             vcpkg/buildtrees/*/config-*.log
+            vcpkg/buildtrees/*/install-*.log
             vcpkg/buildtrees/*/stdout-*.log
 
   publish:
@@ -297,4 +300,5 @@ jobs:
             nativebuilds/build/nativebuilds-triplets/
             vcpkg/buildtrees/*/build-*.log
             vcpkg/buildtrees/*/config-*.log
+            vcpkg/buildtrees/*/install-*.log
             vcpkg/buildtrees/*/stdout-*.log
