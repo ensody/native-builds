@@ -54,7 +54,7 @@ public fun Project.jniNativeBuild(
             group = "build"
             dependsOn("unzipNativeBuilds")
             outputLibraryName.set(name)
-            this.nativeBuilds.addAll(nativeBuilds)
+            this.nativeBuilds.addAll(nativeBuilds.filter { !it.get().module.name.endsWith("-headers") })
             outputDirectory.set(file("build/nativebuilds-android/$name"))
             block()
         }
