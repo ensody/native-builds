@@ -139,8 +139,7 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
             val file = baseTriplets.first { it.nameWithoutExtension == target.triplet }
             val destination = File(overlayTriplets, file.name)
             file.copyTo(destination)
-            destination.appendText("\nset(VCPKG_BUILD_TYPE release)\n")
-            var toolchainSetup = mutableListOf<String>()
+            var toolchainSetup = mutableListOf("set(VCPKG_BUILD_TYPE release)")
             if (target.isAndroid()) {
                 // The vcpkg default triplets use Android API level 28.
                 // Change that to use the same Android API level as Kotlin.
@@ -490,7 +489,7 @@ for (pkg in packages) {
 
     val headersPkgName = "${pkg.name}-headers"
     // Sometimes the headers are different per target (e.g. OpenSSL's configuration.h). Deduplicate all common headers
-    // into a separate "common" folder within the zip file and the remaining
+    // into a separate "common" folder and the platform-specific headers in their own folders within the zip file.
     val headers = libTargets.associateWith { targetOutDir ->
         val includeDir = File(targetOutDir, "include")
         includeDir.walkBottomUp().filter { it.isFile }.map { it.absoluteFile.relativeTo(includeDir) }.toSet()
