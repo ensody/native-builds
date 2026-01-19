@@ -28,6 +28,7 @@ public fun Project.jniNativeBuild(
     block: JniBuildTask.() -> Unit,
 ) {
     val targets = targets ?: getDefaultJvmNativeBuildTargets()
+    val libs = nativeBuilds.filter { !it.get().module.name.endsWith("-headers") }
     addJvmNativeBuilds(nativeBuilds = nativeBuilds.toTypedArray(), targets = targets)
     val androidExtension = extensions.findByType<LibraryExtension>() ?: extensions.findByType<ApplicationExtension>()
     val androidTestSourceSet = androidExtension?.sourceSets?.named("test")
@@ -40,7 +41,7 @@ public fun Project.jniNativeBuild(
         addJniDesktopBuildTasks(name) {
             dependsOn("unzipNativeBuilds")
             outputLibraryName.set(name)
-            this.nativeBuilds.addAll(nativeBuilds)
+            this.nativeBuilds.addAll(libs)
             block()
             // Android unit tests run on the host, so integrate the native shared libs for the host system
             androidTestSourceSet?.configure { resources.srcDir(outputDirectory.get().asFile.parentFile.parentFile) }
@@ -54,7 +55,7 @@ public fun Project.jniNativeBuild(
             group = "build"
             dependsOn("unzipNativeBuilds")
             outputLibraryName.set(name)
-            this.nativeBuilds.addAll(nativeBuilds.filter { !it.get().module.name.endsWith("-headers") })
+            this.nativeBuilds.addAll(libs)
             outputDirectory.set(file("build/nativebuilds-android/$name"))
             block()
         }
