@@ -1,5 +1,6 @@
 pluginManagement {
-    includeBuild("build-logic")
+    includeBuild("build-logic-example-root")
+    includeBuild("../build-logic")
     repositories {
         google()
         gradlePluginPortal()
@@ -10,7 +11,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "NativeBuilds"
+rootProject.name = "NativeBuilds-Example"
 
 val ignorePaths = mutableSetOf("build", "docs", "gradle", "src", "vcpkg", "vcpkg-tool", "vcpkg_installed")
 if (System.getenv("WITH_WRAPPERS") != "true") {
@@ -37,5 +38,3 @@ fun autoDetectModules(root: File) {
     }
 }
 autoDetectModules(rootDir)
-
-//includeBuild("example")

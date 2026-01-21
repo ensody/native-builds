@@ -1,0 +1,18 @@
+[versions]
+kotlin = "2.2.21"
+kotlinForGradlePlugins = "1.9.0"
+nativebuilds = "0.8.0"
+zstd = "1.5.7.8"
+
+[libraries]
+nativebuilds-zstd-headers = { module = "com.ensody.nativebuilds:zstd-headers", version.ref = "zstd" }
+nativebuilds-zstd-libzstd = { module = "com.ensody.nativebuilds:zstd-libzstd", version.ref = "zstd" }
+
+desugarJdkLibs = { module = "com.android.tools:desugar_jdk_libs", version = "2.1.5" }
+junit = { module = "junit:junit", version = "4.13.2" }
+kotlin-test-main =  { module = "org.jetbrains.kotlin:kotlin-test" }
+kotlin-test-junit =  { module = "org.jetbrains.kotlin:kotlin-test-junit" }
+ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version = "1.7.1" }
+
+[plugins]
+nativebuilds = { id = "com.ensody.nativebuilds", version.ref = "nativebuilds" }

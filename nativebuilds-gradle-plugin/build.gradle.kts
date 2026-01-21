@@ -6,15 +6,11 @@ plugins {
     id("com.ensody.build-logic.publish")
 }
 
-dependencies {
-    compileOnly(libs.gradle.kotlin)
-    implementation(libs.serialization.json)
-}
-
 setupBuildLogic {
     dependencies {
         compileOnly(libs.gradle.kotlin)
         compileOnly(libs.gradle.android.api)
+        implementation(libs.serialization.json)
     }
 
     gradlePlugin {

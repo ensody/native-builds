@@ -1,24 +1,27 @@
-pluginManagement {
-    includeBuild("build-logic")
+enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
+
+dependencyResolutionManagement {
     repositories {
-        google()
         gradlePluginPortal()
+        google()
         mavenCentral()
-        if (System.getenv("RUNNING_ON_CI") != "true") {
-            mavenLocal()
+    }
+
+    versionCatalogs {
+        create("rootLibs") {
+            from(files("../gradle/libs.versions.toml"))
         }
     }
 }
 
-rootProject.name = "NativeBuilds"
+includeBuild("../../build-logic")
 
-val ignorePaths = mutableSetOf("build", "docs", "gradle", "src", "vcpkg", "vcpkg-tool", "vcpkg_installed")
-if (System.getenv("WITH_WRAPPERS") != "true") {
-    ignorePaths.add("generated-kotlin-wrappers")
-}
-if (System.getenv("PUBLISHING") == "true" || System.getenv("WITH_WRAPPERS") == "true") {
-    ignorePaths.add("nativebuilds-loader")
-    ignorePaths.add("nativebuilds-gradle-plugin")
+rootProject.name += "-root-example"
+
+val ignorePaths = mutableSetOf("build", "docs", "gradle", "src")
+val rootLibs = file("../gradle/libs.versions.toml").readText().replace(Regex("#.*"), "")
+if ("org.jetbrains.kotlin.plugin.compose" !in rootLibs || "org.jetbrains.compose" !in rootLibs) {
+    ignorePaths.add("build-logic-compose")
 }
 fun autoDetectModules(root: File) {
     for (file in root.listFiles()) {
@@ -37,5 +40,3 @@ fun autoDetectModules(root: File) {
     }
 }
 autoDetectModules(rootDir)
-
-//includeBuild("example")

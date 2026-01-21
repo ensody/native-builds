@@ -1,0 +1,5 @@
+package = com.ensody.nativebuilds.example.zstd.internal
+headerFilter = *
+headers = zstd.h \
+          zstd_errors.h \
+          zdict.h

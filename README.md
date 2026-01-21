@@ -63,7 +63,9 @@ You don't need Zig if you're just consuming the pre-built libraries (i.e., you'r
 
 ### Example
 
-Take a look at the [Kompressor](https://github.com/ensody/Kompressor) project to see a real-world example. NativeBuilds is used in the modules that are named "...--nativelib".
+The `example` folder in this repo contains a minimal sample project which just calls `ZSTD_versionString()` from libzstd. It builds for several native targets and JVM and Android. You have to run `./gradlew assemble` once to build all necessary artifacts, so the IDE's Gradle sync won't warn about missing files.
+
+Take a look at the [Kompressor](https://github.com/ensody/Kompressor) project to see a slightly more complex real-world example. NativeBuilds is used in the modules that are named "...--nativelib".
 
 ### Step by step
 
@@ -136,6 +138,9 @@ jniNativeBuild(
     // Optional: Path(s) to any additional headers
     // includeDirs.from("../jni/common/include")
 }
+
+// This allows Android unit tests to run on the host
+substituteAndroidNativeLibsInUnitTests()
 ```
 
 For Kotlin/Native, create `src/nativeMain/cinterop/openssl.def`, but don't define `staticLibraries`.
