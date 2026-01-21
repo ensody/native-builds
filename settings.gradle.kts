@@ -38,4 +38,4 @@ fun autoDetectModules(root: File) {
 }
 autoDetectModules(rootDir)
 
-//includeBuild("example")
+includeBuild("example")

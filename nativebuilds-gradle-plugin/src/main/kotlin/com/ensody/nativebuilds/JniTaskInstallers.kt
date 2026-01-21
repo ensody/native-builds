@@ -60,6 +60,10 @@ public fun Project.jniNativeBuild(
             block()
         }
 
+        tasks.named("prepareKotlinIdeaImport") {
+            dependsOn(generateTask)
+        }
+
         mainTask.dependsOn(generateTask)
 
         androidExtension.apply {
@@ -153,6 +157,7 @@ internal fun Project.addJniDesktopBuildTasks(name: String, block: CompileJni.() 
         )
         mainTask.dependsOn(task)
         task.configure {
+            group = "build"
             dependsOn(copyJniHeadersTask)
 
             val hostDirName = when (target) {

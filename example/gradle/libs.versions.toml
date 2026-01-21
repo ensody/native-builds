@@ -12,7 +12,7 @@ desugarJdkLibs = { module = "com.android.tools:desugar_jdk_libs", version = "2.1
 junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-test-main =  { module = "org.jetbrains.kotlin:kotlin-test" }
 kotlin-test-junit =  { module = "org.jetbrains.kotlin:kotlin-test-junit" }
-ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version = "1.7.1" }
+ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version = "1.8.0" }
 
 [plugins]
 nativebuilds = { id = "com.ensody.nativebuilds", version.ref = "nativebuilds" }
