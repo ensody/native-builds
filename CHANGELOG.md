@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+* Generate CMakeLists.txt during Gradle sync, so the IDE won't complain about missing files.
+
 ## 0.8.0
 
 * Added Zig based cross-compilation for JNI C++ code (JVM & Android). Use `jniNativeBuild()` in your `build.gradle.kts` to compile your C++ code for all platforms at once.
