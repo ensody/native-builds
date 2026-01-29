@@ -16,9 +16,9 @@ public object NativeBuildsJvmLoader {
     public fun load(lib: NativeBuildsJvmLib) {
         synchronized(lib) {
             if (lib !in loadedLibs) {
-                val vendor = System.getProperty("java.vendor")?.lowercase()
+                val vendor = System.getProperty("java.vendor")
                 if (vendor == "The Android Project") {
-                    System.loadLibrary(lib.libName)
+                    System.loadLibrary(lib.libName.removePrefix("lib"))
                     loadedLibs.add(lib)
                     return
                 }

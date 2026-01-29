@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.4
+
+* Fixed Android JNI loading.
+
 ## 0.8.3
 
 * Fixed inconsistent .so file name for Android vs. JVM.
