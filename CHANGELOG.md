@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2
+
+* Fixed Android JNI builds making duplicate copies of NativeBuilds .so libraries.
+
 ## 0.8.1
 
 * Generate CMakeLists.txt during Gradle sync, so the IDE won't complain about missing files.

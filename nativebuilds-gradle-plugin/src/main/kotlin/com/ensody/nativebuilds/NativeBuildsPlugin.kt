@@ -2,24 +2,13 @@
 
 package com.ensody.nativebuilds
 
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.ExternalModuleDependency
-import org.gradle.api.artifacts.MinimalExternalModuleDependency
-import org.gradle.api.provider.Provider
 import org.gradle.internal.component.external.model.ModuleComponentArtifactIdentifier
 import org.gradle.jvm.tasks.Jar
-import org.gradle.kotlin.dsl.add
 import org.gradle.kotlin.dsl.support.unzipTo
 import org.gradle.kotlin.dsl.support.useToRun
 import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.plugin.mpp.DefaultCInteropSettings
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
 import java.io.File
 import java.util.zip.ZipFile

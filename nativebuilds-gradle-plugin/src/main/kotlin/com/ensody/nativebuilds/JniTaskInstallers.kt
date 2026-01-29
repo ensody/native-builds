@@ -118,13 +118,14 @@ public fun Project.addJvmNativeBuilds(
                     val cmakeHeader = """
                     project(${rawArtifact.module.name})
                     set(NATIVEBUILDS_DIR ${nativeBuildsPath.absolutePath.quoted()})
-                    add_library(${rawArtifact.module.name} SHARED IMPORTED)
+                    add_library(${rawArtifact.module.name} INTERFACE)
                     """.trimIndent()
                     val cmakeRule =
                         """
-                        set_target_properties(${rawArtifact.module.name} PROPERTIES IMPORTED_LOCATION
-                            "${'$'}{NATIVEBUILDS_DIR}/$pkg-$lib-${target.suffix}/jni/${'$'}{CMAKE_ANDROID_ARCH_ABI}/$lib.so"
+                        target_link_directories(${rawArtifact.module.name} INTERFACE
+                            "${'$'}{NATIVEBUILDS_DIR}/zstd-libzstd-android/jni/${'$'}{CMAKE_ANDROID_ARCH_ABI}"
                         )
+                        target_link_libraries(${rawArtifact.module.name} INTERFACE $lib.so)
                         include_directories("${'$'}{NATIVEBUILDS_DIR}/$pkg-headers/common")
                         include_directories("${'$'}{NATIVEBUILDS_DIR}/$pkg-headers/androidNativeArm64")
                         """.trimIndent() + "\n"
