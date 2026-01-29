@@ -1,9 +1,13 @@
 [versions]
 kotlin = "2.2.21"
 kotlinForGradlePlugins = "1.9.0"
+nativeBuilds = "0.8.4"
+androidGradle = "8.13.2"
 coroutines = "1.10.2"
 
 [libraries]
+nativebuilds-loader = { module = "com.ensody.nativebuilds:nativebuilds-loader", version.ref = "nativeBuilds" }
+
 coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom", version.ref = "coroutines" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -14,15 +18,14 @@ kotlin-test-main =  { module = "org.jetbrains.kotlin:kotlin-test" }
 kotlin-test-junit =  { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version = "1.7.1" }
 mockk = { module = "io.mockk:mockk", version = "1.14.5" }
-nativebuilds-loader = { module = "com.ensody.nativebuilds:nativebuilds-loader", version = "0.8.0" }
 
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.7.3" }
 
-gradle-android = { module = "com.android.tools.build:gradle", version = "8.13.2" }
-gradle-android-api = { module = "com.android.tools.build:gradle-api", version = "8.13.2" }
+gradle-android = { module = "com.android.tools.build:gradle", version.ref = "androidGradle" }
+gradle-android-api = { module = "com.android.tools.build:gradle-api", version.ref = "androidGradle" }
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradle-cocoapods = { module = "org.jetbrains.kotlin.native.cocoapods:org.jetbrains.kotlin.native.cocoapods.gradle.plugin", version.ref = "kotlin" }
-gradle-dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version = "2.0.0" }
+gradle-dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version = "2.1.0" }
 gradle-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version = "1.23.8" }
 gradle-kotlin-jvm = { module = "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin", version.ref = "kotlin" }
 gradle-maven-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version = "0.35.0" }

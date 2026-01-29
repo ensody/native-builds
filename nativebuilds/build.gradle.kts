@@ -80,7 +80,7 @@ val pkgGraph = listOf(
             "libcrypto" to listOf(),
             "libssl" to listOf("libcrypto"),
         ),
-        republishVersionSuffix = mapOf("3.6.0" to ".13"),
+        republishVersionSuffix = mapOf("3.6.0" to "13"),
     ),
     PkgDef(
         pkg = "zlib",
