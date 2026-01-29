@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.3
+
+* Fixed inconsistent .so file name for Android vs. JVM.
+
 ## 0.8.2
 
 * Fixed Android JNI builds making duplicate copies of NativeBuilds .so libraries.

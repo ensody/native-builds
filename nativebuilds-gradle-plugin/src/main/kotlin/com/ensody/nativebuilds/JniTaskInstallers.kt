@@ -40,7 +40,7 @@ public fun Project.jniNativeBuild(
     if (JvmNativeBuildTarget.Jvm in targets) {
         addJniDesktopBuildTasks(name) {
             dependsOn("unzipNativeBuilds")
-            outputLibraryName.set(name)
+            outputLibraryName.set("lib$name")
             this.nativeBuilds.addAll(libs)
             block()
             // Android unit tests run on the host, so integrate the native shared libs for the host system
@@ -123,7 +123,7 @@ public fun Project.addJvmNativeBuilds(
                     val cmakeRule =
                         """
                         target_link_directories(${rawArtifact.module.name} INTERFACE
-                            "${'$'}{NATIVEBUILDS_DIR}/zstd-libzstd-android/jni/${'$'}{CMAKE_ANDROID_ARCH_ABI}"
+                            "${'$'}{NATIVEBUILDS_DIR}/$pkg-$lib-${target.suffix}/jni/${'$'}{CMAKE_ANDROID_ARCH_ABI}"
                         )
                         target_link_libraries(${rawArtifact.module.name} INTERFACE $lib.so)
                         include_directories("${'$'}{NATIVEBUILDS_DIR}/$pkg-headers/common")
