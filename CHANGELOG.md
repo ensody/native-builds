@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0
+
+* Added `NativeBuildsJvmLoader.overrideLoader` to allow fully customizing the JNI lib loading logic.
+
 ## 0.8.4
 
 * Fixed Android JNI loading.
