@@ -19,9 +19,10 @@ public fun String.quoted(): String =
     "\"${
         replace("\\", "\\\\")
             .replace("\"", "\\\"")
-            .replace("\t", "\\\t")
-            .replace("\r", "\\\r")
-            .replace("\n", "\\\n")
+            .replace("\t", "\\t")
+            .replace("\r", "\\r")
+            .replace("\n", "\\n")
+            .replace("$", "\\$")
     }\""
 
 public fun File.writeTextIfDifferent(text: String) {
