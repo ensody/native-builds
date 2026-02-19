@@ -43,7 +43,7 @@ val pkgGraph = listOf(
         sublibDependencies = mapOf(
             "libcurl" to listOf("libcrypto", "libssl", "libnghttp2", "libnghttp3", "libtcp2", "libz"),
         ),
-        republishVersionSuffix = mapOf("8.18.0" to "5"),
+        republishVersionSuffix = mapOf("8.18.0" to "6"),
     ),
     PkgDef(
         pkg = "lz4",
@@ -80,7 +80,7 @@ val pkgGraph = listOf(
             "libcrypto" to listOf(),
             "libssl" to listOf("libcrypto"),
         ),
-        republishVersionSuffix = mapOf("3.6.0" to "13"),
+        republishVersionSuffix = mapOf("3.6.1" to "1"),
     ),
     PkgDef(
         pkg = "zlib",
