@@ -318,6 +318,7 @@ for (target in targets) {
                         binFolder.deleteRecursively()
                     }
                     File(destPath, "lib/libzlib.a").renameLeafName("libz.a")
+                    File(destPath, "lib/libzs.a").renameLeafName("libz.a")
                     File(destPath, "lib/libzlib.so").renameLeafName("libz.so")
                 }
             }
