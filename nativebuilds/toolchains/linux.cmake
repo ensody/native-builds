@@ -7,8 +7,9 @@ if (NOT _VCPKG_LINUX_TOOLCHAIN_OVERRIDE)
   set(_VCPKG_LINUX_TOOLCHAIN_OVERRIDE 1)
 
   # It's not sufficient to set just CMAKE_SYSROOT. Make sure that the sysroot is actually used instead of the host's variant.
-  string(PREPEND CMAKE_C_FLAGS " --sysroot=${CMAKE_SYSROOT} -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include ")
-  string(PREPEND CMAKE_CC_FLAGS " --sysroot=${CMAKE_SYSROOT} -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include ")
+  string(PREPEND CMAKE_C_FLAGS " --sysroot=${CMAKE_SYSROOT} -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include -fPIC ")
+  string(PREPEND CMAKE_CXX_FLAGS " --sysroot=${CMAKE_SYSROOT} -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include -fPIC ")
+  string(PREPEND CMAKE_CC_FLAGS " --sysroot=${CMAKE_SYSROOT} -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include -fPIC ")
   string(PREPEND CMAKE_AR_FLAGS " --sysroot=${CMAKE_SYSROOT} ")
   string(PREPEND CMAKE_LINKER_FLAGS " --sysroot=${CMAKE_SYSROOT} ")
 
