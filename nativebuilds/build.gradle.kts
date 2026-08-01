@@ -62,7 +62,7 @@ val pkgGraph = listOf(
     PkgDef(
         pkg = "nghttp3",
         sublibDependencies = mapOf(
-            "libnghttp3" to listOf(),
+            "libnghttp3" to listOf("sfparse"),
         ),
         republishVersionSuffix = mapOf("1.17.0" to "1"),
     ),
@@ -81,6 +81,15 @@ val pkgGraph = listOf(
             "libssl" to listOf("libcrypto"),
         ),
         republishVersionSuffix = mapOf("3.6.3" to "1"),
+    ),
+    PkgDef(
+        pkg = "sfparse",
+        sublibDependencies = mapOf(
+            "libsfparse" to listOf(),
+        ),
+        // We assume that the package version-date is assigned by vcpkg and there is no official version number yet
+        versionPrefix = "0.0.1-",
+        republishVersionSuffix = mapOf(),
     ),
     PkgDef(
         pkg = "zlib",
@@ -200,7 +209,9 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
 }
 
 val packages = loadBuildPackages(rootDir).map { pkg ->
-    pkgGraph[pkg.name]?.republishVersionSuffix?.get(pkg.version)?.let {
+    val pkgDef = pkgGraph[pkg.name]
+    val pkg = pkgDef?.versionPrefix?.let { pkg.copy(version = "$it${pkg.version}") } ?: pkg
+    pkgDef?.republishVersionSuffix?.get(pkg.version)?.let {
         val separator = if (it[0].isDigit()) "_" else ""
         pkg.copy(version = "${pkg.version}$separator$it")
     } ?: pkg
