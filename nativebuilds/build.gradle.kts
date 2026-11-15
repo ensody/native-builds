@@ -36,35 +36,35 @@ val pkgGraph = listOf(
             "libbrotlidec" to listOf("libbrotlicommon"),
             "libbrotlienc" to listOf("libbrotlicommon"),
         ),
-        republishVersionSuffix = mapOf("1.2.0" to "5"),
+        republishVersionSuffix = mapOf("1.2.1" to "1"),
     ),
     PkgDef(
         pkg = "curl",
         sublibDependencies = mapOf(
             "libcurl" to listOf("libcrypto", "libssl", "libnghttp2", "libnghttp3", "libtcp2", "libz"),
         ),
-        republishVersionSuffix = mapOf("8.21.0" to "1"),
+        republishVersionSuffix = mapOf("8.23.0" to "1"),
     ),
     PkgDef(
         pkg = "lz4",
         sublibDependencies = mapOf(
             "liblz4" to listOf(),
         ),
-        republishVersionSuffix = mapOf("1.10.0" to ".9"),
+        republishVersionSuffix = mapOf("1.11.1" to "1"),
     ),
     PkgDef(
         pkg = "nghttp2",
         sublibDependencies = mapOf(
             "libnghttp2" to listOf(),
         ),
-        republishVersionSuffix = mapOf("1.69.0" to "1"),
+        republishVersionSuffix = mapOf("1.71.0" to "1"),
     ),
     PkgDef(
         pkg = "nghttp3",
         sublibDependencies = mapOf(
             "libnghttp3" to listOf("sfparse"),
         ),
-        republishVersionSuffix = mapOf("1.17.0" to "1"),
+        republishVersionSuffix = mapOf("1.19.0" to "1"),
     ),
     PkgDef(
         pkg = "ngtcp2",
@@ -72,7 +72,7 @@ val pkgGraph = listOf(
             "libngtcp2" to listOf(),
             "libngtcp2_crypto_ossl" to listOf("libngtcp2", "libcrypto"),
         ),
-        republishVersionSuffix = mapOf("1.24.0" to "1"),
+        republishVersionSuffix = mapOf("1.26.0" to "1"),
     ),
     PkgDef(
         pkg = "openssl",
@@ -89,7 +89,7 @@ val pkgGraph = listOf(
         ),
         // We assume that the package version-date is assigned by vcpkg and there is no official version number yet
         versionPrefix = "0.0.1-",
-        republishVersionSuffix = mapOf(),
+        republishVersionSuffix = mapOf("0.0.1-2026-06-04" to "1"),
     ),
     PkgDef(
         pkg = "zlib",
@@ -103,7 +103,7 @@ val pkgGraph = listOf(
         sublibDependencies = mapOf(
             "libzstd" to listOf(),
         ),
-        republishVersionSuffix = mapOf("1.5.7" to ".9"),
+        republishVersionSuffix = mapOf("1.5.7" to ".10"),
     ),
 ).associateBy { it.pkg }
 
