@@ -2,6 +2,7 @@
 .gradle
 .kotlin
 build
+.tmp
 local.properties
 .credentials
 .idea

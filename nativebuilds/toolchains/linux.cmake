@@ -7,8 +7,10 @@ if (NOT _VCPKG_LINUX_TOOLCHAIN_OVERRIDE)
   set(_VCPKG_LINUX_TOOLCHAIN_OVERRIDE 1)
 
   # It's not sufficient to set just CMAKE_SYSROOT. Make sure that the sysroot is actually used instead of the host's variant.
-  string(PREPEND CMAKE_C_FLAGS " --sysroot=${CMAKE_SYSROOT} -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include -fPIC ")
-  string(PREPEND CMAKE_CXX_FLAGS " --sysroot=${CMAKE_SYSROOT} -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include -fPIC ")
+  # -B makes GCC take the sysroot's startup files and libraries for links (e.g. feature checks)
+  # instead of the cross compiler's built-in ones, which point at the build environment's glibc.
+  string(PREPEND CMAKE_C_FLAGS " --sysroot=${CMAKE_SYSROOT} -B${CMAKE_SYSROOT}/usr/lib/ -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include -fPIC ")
+  string(PREPEND CMAKE_CXX_FLAGS " --sysroot=${CMAKE_SYSROOT} -B${CMAKE_SYSROOT}/usr/lib/ -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include -fPIC ")
   string(PREPEND CMAKE_CC_FLAGS " --sysroot=${CMAKE_SYSROOT} -isystem ${CMAKE_SYSROOT}/usr/include -isystem ${_TOOLCHAIN_BASE}/lib/*/$ENV{TOOLCHAIN_TARGET}/*/include -fPIC ")
   string(PREPEND CMAKE_AR_FLAGS " --sysroot=${CMAKE_SYSROOT} ")
   string(PREPEND CMAKE_LINKER_FLAGS " --sysroot=${CMAKE_SYSROOT} ")
