@@ -27,7 +27,7 @@ public abstract class GenerateAndroidCMakeLists : DefaultTask(), JniBuildTask {
     @TaskAction
     public fun run() {
         val content = buildString {
-            appendLine("cmake_minimum_required(VERSION 3.4.1)")
+            appendLine("cmake_minimum_required(VERSION 3.13)")
             appendLine("project(${outputLibraryName.get()})")
             val artifacts = nativeBuilds.get().map { it.get() }
             for (artifact in artifacts) {
@@ -38,6 +38,12 @@ public abstract class GenerateAndroidCMakeLists : DefaultTask(), JniBuildTask {
             appendLine("add_library(${outputLibraryName.get()} SHARED ${inputFiles.asFileTree.joinToString(" ") { it.absolutePath.quoted() }})")
             appendLine("include_directories(${outputLibraryName.get()} ${includeDirs.joinToString(" ") { it.absolutePath.quoted() }})")
             appendLine("target_link_libraries(${outputLibraryName.get()} ${artifacts.joinToString(" ") { it.module.name }})")
+            appendLine()
+            appendLine("# 16 KB page alignment for Android 15+ devices")
+            appendLine(
+                "target_link_options(${outputLibraryName.get()} PRIVATE " +
+                    "\"-Wl,-z,max-page-size=16384\" \"-Wl,-z,common-page-size=16384\")",
+            )
         }
         outputDirectory.file("CMakeLists.txt").get().asFile.writeTextIfDifferent(content)
     }
