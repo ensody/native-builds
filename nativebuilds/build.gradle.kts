@@ -154,6 +154,10 @@ val initBuildTask = tasks.register("cleanNativeBuild") {
                 // Change that to use the same Android API level as Kotlin.
                 // https://github.com/JetBrains/kotlin/blob/v2.3.0/native/utils/src/org/jetbrains/kotlin/konan/target/ClangArgs.kt#L11
                 toolchainSetup += "set(VCPKG_CMAKE_SYSTEM_VERSION 21)"
+                // 16 KB page alignment, required for Android 15+ devices. This is an opt-in
+                // for NDK 27 and the default since NDK 28.
+                // https://developer.android.com/guide/practices/page-sizes
+                toolchainSetup += "list(APPEND VCPKG_CMAKE_CONFIGURE_OPTIONS -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON)"
             }
 
             // Kotlin Native uses its own toolchain. For example, on Linux it uses its own glibc version.
